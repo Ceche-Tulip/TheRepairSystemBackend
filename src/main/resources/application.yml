@@ -1,0 +1,31 @@
+# Spring 应用基础配置
+spring:
+  application:
+    name: TheRepairSystem  # 应用名称
+  profiles:
+    active:
+
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/therepairsystem?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA/Hibernate 配置
+  jpa:
+    hibernate:
+      ddl-auto: update  # 自动更新表结构（开发环境可用，生产环境建议改为none）
+    show-sql: true      # 打印SQL语句
+    properties:
+      hibernate:
+        format_sql: true  # 格式化SQL语句，提升可读性
+
+# JWT 自定义配置
+jwt:
+  secret: "oKZ9w0eQj2Xt8P7s5L3k1J9m0N2b4v6c8x9z7a1s3d5f7g9h2j4k6l8p0o1i3u5y7t9w0q2s4d6f8g="  # 替换为你生成的安全密钥
+  expiration-ms: 86400000  # Token过期时间：1天（86400000毫秒）
+
+logging:
+  level:
+    org.springframework.security: DEBUG
