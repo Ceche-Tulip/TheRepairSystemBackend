@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.trs.therepairsystem.pojo.User;
 import org.trs.therepairsystem.pojo.UserRole;
 import org.trs.therepairsystem.pojo.UserRoleRel;
@@ -25,10 +26,18 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRoleRelRepository userRoleRelRepository;
 
+//    @Override
+//    public User getById(Long id) {
+//        return userRepository.findById(id).orElse(null);
+//    }
+    // 暂时改为不返回密码字段
     @Override
     public User getById(Long id) {
-        return userRepository.findById(id).orElse(null);
+        User user = userRepository.findById(id).orElse(null);
+        if (user != null) user.setPassword(null);  // 关键
+        return user;
     }
+
 
     @Override
     public Page<User> listUsers(int page, int size) {
@@ -106,6 +115,24 @@ public class UserServiceImpl implements UserService {
         user.setPassword(encode(newPassword));
         userRepository.save(user);
     }
+
+//    @Override
+//    @Transactional(rollbackFor = Exception.class)
+//    public void assignRoles(Long userId, List<Integer> roleIds) {
+//        // 删除旧关系
+//        userRoleRelRepository.deleteByUserId(userId);
+//
+//        // 加载用户实体
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + userId));
+//
+//        // 保存新关系（按每个 roleId 查到对应的 UserRole 实体）
+//        for (Integer roleId : roleIds) {
+//            UserRole role = roleRepository.findById(roleId)
+//                    .orElseThrow(() -> new IllegalArgumentException("角色不存在: " + roleId));
+//            userRoleRelRepository.save(new UserRoleRel(null, user, role));
+//        }
+//    }
 
     private String encode(String raw) {
         return new BCryptPasswordEncoder().encode(raw);

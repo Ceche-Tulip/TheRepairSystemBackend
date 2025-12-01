@@ -1,4 +1,3 @@
-// java
 package org.trs.therepairsystem.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
@@ -29,7 +29,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // 通过 AuthenticationConfiguration 获取全局 AuthenticationManager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
@@ -41,7 +40,16 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        // 登录接口 + Swagger 放行
                         .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
+
+                        // 角色接口权限控制
+                        .requestMatchers(HttpMethod.GET, "/api/roles/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/roles/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/roles/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/roles/**").hasRole("ADMIN")
+
+                        // 其他接口需要认证
                         .anyRequest().authenticated()
                 )
                 .authenticationManager(authenticationManager)

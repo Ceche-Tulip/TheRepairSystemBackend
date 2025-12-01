@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.trs.therepairsystem.pojo.User;
 import org.trs.therepairsystem.pojo.UserRole;
+import org.trs.therepairsystem.pojo.dto.UserDTO;
+import org.trs.therepairsystem.web.converter.UserConverter;
 import org.trs.therepairsystem.web.dto.ChangePasswordRequest;
 import org.trs.therepairsystem.service.UserService;
 import org.trs.therepairsystem.web.annotation.CurrentUser;
@@ -22,56 +24,35 @@ public class UserController {
     private UserService userService;
 
     @GetMapping("/{id}")
-    public User getUser(@PathVariable Long id) {
-        return userService.getById(id);
+    public ResponseEntity<UserDTO> getUser(@PathVariable Long id) {
+        User user = userService.getById(id);
+        return ResponseEntity.ok(UserConverter.toDTO(user));
     }
 
     @GetMapping
-    public Page<User> listUsers(@RequestParam int page,
-                                @RequestParam int size) {
-        return userService.listUsers(page, size);
+    public Page<UserDTO> listUsers(@RequestParam int page,
+                                   @RequestParam int size) {
+        return UserConverter.toDTOPage(userService.listUsers(page, size));
     }
 
     @PostMapping
-    public User createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    public ResponseEntity<UserDTO> createUser(@RequestBody User user) {
+        User saved = userService.createUser(user);
+        return ResponseEntity.ok(UserConverter.toDTO(saved));
     }
 
     @PutMapping("/{id}")
-    public User updateUser(@PathVariable Long id, @RequestBody User user) {
-        return userService.updateUser(id, user);
-    }
-
-    @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-    }
-
-    @GetMapping("/{id}/roles")
-    public List<UserRole> getUserRoles(@PathVariable Long id) {
-        return userService.getUserRoles(id);
-    }
-
-    @PostMapping("/{id}/roles")
-    public void updateUserRoles(@PathVariable Long id,
-                                @RequestBody List<Integer> roleIds) {
-        userService.updateUserRoles(id, roleIds);
-    }
-
-    @PutMapping("/{id}/password")
-    public void resetPassword(@PathVariable Long id) {
-        userService.resetPassword(id);
-    }
-
-    @PutMapping("/password")
-    public void changePassword(@RequestBody ChangePasswordRequest req) {
-        userService.changePassword(req.getUserId(),
-                req.getOldPassword(), req.getNewPassword());
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id,
+                                              @RequestBody User user) {
+        User updated = userService.updateUser(id, user);
+        return ResponseEntity.ok(UserConverter.toDTO(updated));
     }
 
     @GetMapping("/current")
-    public ResponseEntity<User> getCurrent(@CurrentUser User currentUser) {
+    public ResponseEntity<UserDTO> getCurrent(@CurrentUser User currentUser) {
         if (currentUser == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        return ResponseEntity.ok(currentUser);
+        return ResponseEntity.ok(UserConverter.toDTO(currentUser));
     }
+
+    // 其它接口（密码修改、角色更新等）可继续返回 void 或简单返回状态
 }

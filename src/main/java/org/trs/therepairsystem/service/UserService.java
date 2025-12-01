@@ -27,6 +27,8 @@ public interface UserService {
     void resetPassword(Long userId);
 
     void changePassword(Long userId, String oldPassword, String newPassword);
+
+//    public void assignRoles(Long userId, List<Integer> roleIds);
 }
 
 
