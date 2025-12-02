@@ -1,16 +1,27 @@
 package org.trs.therepairsystem.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.trs.therepairsystem.pojo.UserRole;
+import org.trs.therepairsystem.pojo.dto.RoleDTO;
 import org.trs.therepairsystem.service.RoleService;
 import org.trs.therepairsystem.service.UserService;
+import org.trs.therepairsystem.web.converter.RoleConverter;
+import org.trs.therepairsystem.web.dto.RoleCreateRequest;
+import org.trs.therepairsystem.web.dto.UserRoleAssignRequest;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/roles")
+@Tag(name = "角色管理", description = "角色CRUD操作、用户角色分配等")
+@SecurityRequirement(name = "Bearer Authentication")
 public class RoleController {
 
     @Autowired
@@ -19,39 +30,66 @@ public class RoleController {
     @Autowired
     private UserService userService;
 
-    /** 获取全部角色 */
     @GetMapping
-    public ResponseEntity<?> listRoles() {
-        return ResponseEntity.ok(roleService.getAllRoles());
+    @Operation(summary = "获取所有角色", description = "查询系统中的所有角色信息，所有认证用户都可访问")
+    public ResponseEntity<List<RoleDTO>> listRoles() {
+        List<UserRole> roles = roleService.getAllRoles();
+        return ResponseEntity.ok(RoleConverter.toDTOList(roles));
     }
 
-    /** 创建角色（仅管理员可用） */
     @PostMapping
-    public ResponseEntity<?> createRole(@RequestBody UserRole role) {
-        return ResponseEntity.ok(roleService.createRole(role));
+    @Operation(summary = "创建新角色", description = "管理员创建新的角色")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<RoleDTO> createRole(@RequestBody RoleCreateRequest request) {
+        UserRole role = new UserRole();
+        role.setRoleName(request.getRoleName());
+        
+        UserRole savedRole = roleService.createRole(role);
+        return ResponseEntity.ok(RoleConverter.toDTO(savedRole));
     }
 
-    /** 删除角色 */
+    @PutMapping("/{roleId}")
+    @Operation(summary = "更新角色信息", description = "管理员更新指定角色的信息")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<RoleDTO> updateRole(@PathVariable Integer roleId,
+                                              @RequestBody RoleCreateRequest request) {
+        UserRole existingRole = roleService.getById(roleId);
+        if (existingRole == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        UserRole roleToUpdate = new UserRole();
+        roleToUpdate.setRoleName(request.getRoleName());
+        UserRole updatedRole = roleService.updateRole(roleId, roleToUpdate);
+        return ResponseEntity.ok(RoleConverter.toDTO(updatedRole));
+    }
+
     @DeleteMapping("/{roleId}")
-    public ResponseEntity<?> deleteRole(@PathVariable Integer roleId) {
+    @Operation(summary = "删除角色", description = "管理员删除指定角色（注意：删除前请确保没有用户使用此角色）")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteRole(@Parameter(description = "角色ID", example = "1") @PathVariable Integer roleId) {
         roleService.deleteRole(roleId);
-        return ResponseEntity.ok("角色已删除");
+        return ResponseEntity.noContent().build();
     }
 
-    /** 设置用户角色（管理员操作） */
-    @PostMapping("/assign/{userId}")
-    public ResponseEntity<?> setUserRoles(
-            @PathVariable Long userId,
-            @RequestBody List<Integer> roleIds
+    @PostMapping("/users/{userId}/assign")
+    @Operation(summary = "分配用户角色", description = "管理员为指定用户分配角色")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> assignUserRoles(
+            @Parameter(description = "用户ID", example = "1") @PathVariable Long userId,
+            @RequestBody UserRoleAssignRequest request
     ) {
-        userService.updateUserRoles(userId, roleIds);
-        return ResponseEntity.ok("角色更新成功");
+        userService.updateUserRoles(userId, request.getRoleIds());
+        return ResponseEntity.ok().build();
     }
 
-    /** 查询用户角色 */
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getUserRoles(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getUserRoles(userId));
+    @GetMapping("/users/{userId}")
+    @Operation(summary = "查询用户角色", description = "查询指定用户拥有的所有角色")
+    public ResponseEntity<List<RoleDTO>> getUserRoles(
+            @Parameter(description = "用户ID", example = "1") @PathVariable Long userId
+    ) {
+        List<UserRole> userRoles = userService.getUserRoles(userId);
+        return ResponseEntity.ok(RoleConverter.toDTOList(userRoles));
     }
 }
 

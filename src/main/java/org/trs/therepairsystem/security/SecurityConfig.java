@@ -43,13 +43,7 @@ public class SecurityConfig {
                         // 登录接口 + Swagger 放行
                         .requestMatchers("/api/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/error").permitAll()
 
-                        // 角色接口权限控制
-                        .requestMatchers(HttpMethod.GET, "/api/roles/**").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/roles/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/roles/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/roles/**").hasRole("ADMIN")
-
-                        // 其他接口需要认证
+                        // 其他接口需要认证（具体权限由@PreAuthorize控制）
                         .anyRequest().authenticated()
                 )
                 .authenticationManager(authenticationManager)

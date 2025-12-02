@@ -9,6 +9,10 @@ public interface RoleService {
     List<UserRole> getAllRoles();
 
     UserRole createRole(UserRole role);
+    
+    UserRole updateRole(Integer roleId, UserRole role);
+    
+    UserRole getById(Integer roleId);
 
     void deleteRole(Integer roleId);
 }

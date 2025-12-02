@@ -1,5 +1,7 @@
 package org.trs.therepairsystem.web;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +22,13 @@ import org.trs.therepairsystem.web.dto.LoginRequest;
 import org.trs.therepairsystem.repository.UserRepository;
 import org.trs.therepairsystem.security.JwtUtil;
 import org.trs.therepairsystem.web.dto.AuthResponse;
+import org.trs.therepairsystem.web.dto.UserCreateRequest;
 
 import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "认证管理", description = "用户注册、登录相关接口")
 public class AuthController {
 
     @Autowired private AuthenticationManager authenticationManager;
@@ -36,6 +40,7 @@ public class AuthController {
 
 
     @PostMapping("/login")
+    @Operation(summary = "用户登录", description = "通过用户名和密码进行登录验证，返回JWT Token")
     public AuthResponse login(@RequestBody LoginRequest req) {
         Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword())
@@ -49,16 +54,17 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Operation(summary = "用户注册", description = "创建新用户账号，自动分配普通用户角色")
     @Transactional
-    public ResponseEntity<?> register(@RequestBody User user) {
+    public ResponseEntity<?> register(@RequestBody UserCreateRequest request) {
         // 检查用户名是否已存在
-        if (userRepository.existsByUsername(user.getUsername())) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("用户名已存在");
         }
 
         // 密码格式校验：至少8位，包含字母和数字
-        String rawPassword = user.getPassword() == null ? "" : user.getPassword();
+        String rawPassword = request.getPassword() == null ? "" : request.getPassword();
         java.util.regex.Pattern pwdPattern = java.util.regex.Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,}$");
         if (!pwdPattern.matcher(rawPassword).matches()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -66,14 +72,18 @@ public class AuthController {
         }
 
         // 手机号格式校验（中国手机号示例）匹配一个以 1 开头，第二位是 3-9 的数字，后面紧跟 9 个任意数字的
-        String phone = user.getPhone() == null ? "" : user.getPhone().trim();
+        String phone = request.getPhone() == null ? "" : request.getPhone().trim();
         java.util.regex.Pattern phonePattern = java.util.regex.Pattern.compile("^1[3-9]\\d{9}$");
         if (!phonePattern.matcher(phone).matches()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("手机号格式不正确");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setRealName(request.getRealName());
+        user.setPhone(request.getPhone());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         User saved = userRepository.save(user);
 
         UserDTO dto = new UserDTO();

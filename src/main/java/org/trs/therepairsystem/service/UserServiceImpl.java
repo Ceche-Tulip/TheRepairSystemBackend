@@ -57,12 +57,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+        // 先删除用户角色关联，再删除用户（避免外键约束问题）
         userRoleRelRepository.deleteByUserId(id);
+        userRepository.deleteById(id);
     }
 
     @Override
+    @Transactional
     public void updateUserRoles(Long userId, List<Integer> roleIds) {
         // 删除旧关系（按需要保留）
         userRoleRelRepository.deleteByUserId(userId);

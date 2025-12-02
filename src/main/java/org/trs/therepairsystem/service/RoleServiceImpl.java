@@ -22,6 +22,17 @@ public class RoleServiceImpl implements RoleService {
     public UserRole createRole(UserRole role) {
         return roleRepository.save(role);
     }
+    
+    @Override
+    public UserRole updateRole(Integer roleId, UserRole role) {
+        role.setId(roleId);
+        return roleRepository.save(role);
+    }
+    
+    @Override
+    public UserRole getById(Integer roleId) {
+        return roleRepository.findById(roleId).orElse(null);
+    }
 
     @Override
     public void deleteRole(Integer roleId) {

@@ -27,13 +27,14 @@ public final class CustomUserDetails implements UserDetails {
     public CustomUserDetails(User user, List<String> roles) {
         this.user = Objects.requireNonNull(user, "user 不能为 null");
         // 防御式处理 roles，过滤 null/空串，去重并构建不可变集合
+        // Spring Security 的 hasRole() 方法期望权限名以 ROLE_ 开头
         this.authorities = Collections.unmodifiableList(
                 (roles == null ? List.<String>of() : roles).stream()
                         .filter(Objects::nonNull)
                         .map(String::trim)
                         .filter(r -> !r.isEmpty())
                         .distinct()
-                        .map(SimpleGrantedAuthority::new)
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                         .collect(Collectors.toList())
         );
     }
