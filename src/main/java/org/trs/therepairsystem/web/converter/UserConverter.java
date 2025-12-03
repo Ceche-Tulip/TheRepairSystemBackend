@@ -2,8 +2,8 @@ package org.trs.therepairsystem.web.converter;
 
 
 
-import org.trs.therepairsystem.pojo.User;
-import org.trs.therepairsystem.pojo.dto.UserDTO;
+import org.trs.therepairsystem.entity.User;
+import org.trs.therepairsystem.dto.response.UserDTO;
 import org.springframework.data.domain.Page;
 
 import java.util.stream.Collectors;

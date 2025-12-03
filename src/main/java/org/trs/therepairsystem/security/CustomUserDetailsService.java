@@ -6,9 +6,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
-import org.trs.therepairsystem.pojo.User;
-import org.trs.therepairsystem.pojo.UserRole;
-import org.trs.therepairsystem.pojo.UserRoleRel;
+import org.trs.therepairsystem.entity.User;
+import org.trs.therepairsystem.entity.UserRole;
+import org.trs.therepairsystem.entity.UserRoleRel;
 import org.trs.therepairsystem.repository.UserRepository;
 import org.trs.therepairsystem.repository.UserRoleRelRepository;
 

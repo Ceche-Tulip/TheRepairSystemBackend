@@ -1,6 +1,6 @@
 package org.trs.therepairsystem.service;
 
-import org.trs.therepairsystem.pojo.UserRole;
+import org.trs.therepairsystem.entity.UserRole;
 
 import java.util.List;
 

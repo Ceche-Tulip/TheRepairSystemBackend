@@ -8,13 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.trs.therepairsystem.pojo.UserRole;
-import org.trs.therepairsystem.pojo.dto.RoleDTO;
+import org.trs.therepairsystem.entity.UserRole;
+import org.trs.therepairsystem.dto.response.RoleDTO;
 import org.trs.therepairsystem.service.RoleService;
 import org.trs.therepairsystem.service.UserService;
 import org.trs.therepairsystem.web.converter.RoleConverter;
-import org.trs.therepairsystem.web.dto.RoleCreateRequest;
-import org.trs.therepairsystem.web.dto.UserRoleAssignRequest;
+import org.trs.therepairsystem.dto.request.role.RoleCreateRequest;
+import org.trs.therepairsystem.dto.request.user.UserRoleAssignRequest;
 
 import java.util.List;
 
@@ -32,64 +32,64 @@ public class RoleController {
 
     @GetMapping
     @Operation(summary = "获取所有角色", description = "查询系统中的所有角色信息，所有认证用户都可访问")
-    public ResponseEntity<List<RoleDTO>> listRoles() {
+    public List<RoleDTO> listRoles() {
         List<UserRole> roles = roleService.getAllRoles();
-        return ResponseEntity.ok(RoleConverter.toDTOList(roles));
+        return RoleConverter.toDTOList(roles);
     }
 
     @PostMapping
     @Operation(summary = "创建新角色", description = "管理员创建新的角色")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<RoleDTO> createRole(@RequestBody RoleCreateRequest request) {
+    public RoleDTO createRole(@RequestBody RoleCreateRequest request) {
         UserRole role = new UserRole();
         role.setRoleName(request.getRoleName());
         
         UserRole savedRole = roleService.createRole(role);
-        return ResponseEntity.ok(RoleConverter.toDTO(savedRole));
+        return RoleConverter.toDTO(savedRole);
     }
 
     @PutMapping("/{roleId}")
     @Operation(summary = "更新角色信息", description = "管理员更新指定角色的信息")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<RoleDTO> updateRole(@PathVariable Integer roleId,
-                                              @RequestBody RoleCreateRequest request) {
+    public RoleDTO updateRole(@PathVariable Integer roleId,
+                             @RequestBody RoleCreateRequest request) {
         UserRole existingRole = roleService.getById(roleId);
         if (existingRole == null) {
-            return ResponseEntity.notFound().build();
+            throw new RuntimeException("角色不存在");
         }
         
         UserRole roleToUpdate = new UserRole();
         roleToUpdate.setRoleName(request.getRoleName());
         UserRole updatedRole = roleService.updateRole(roleId, roleToUpdate);
-        return ResponseEntity.ok(RoleConverter.toDTO(updatedRole));
+        return RoleConverter.toDTO(updatedRole);
     }
 
     @DeleteMapping("/{roleId}")
     @Operation(summary = "删除角色", description = "管理员删除指定角色（注意：删除前请确保没有用户使用此角色）")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteRole(@Parameter(description = "角色ID", example = "1") @PathVariable Integer roleId) {
+    public String deleteRole(@Parameter(description = "角色ID", example = "1") @PathVariable Integer roleId) {
         roleService.deleteRole(roleId);
-        return ResponseEntity.noContent().build();
+        return "删除成功";
     }
 
     @PostMapping("/users/{userId}/assign")
     @Operation(summary = "分配用户角色", description = "管理员为指定用户分配角色")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> assignUserRoles(
+    public String assignUserRoles(
             @Parameter(description = "用户ID", example = "1") @PathVariable Long userId,
             @RequestBody UserRoleAssignRequest request
     ) {
         userService.updateUserRoles(userId, request.getRoleIds());
-        return ResponseEntity.ok().build();
+        return "角色分配成功";
     }
 
     @GetMapping("/users/{userId}")
     @Operation(summary = "查询用户角色", description = "查询指定用户拥有的所有角色")
-    public ResponseEntity<List<RoleDTO>> getUserRoles(
+    public List<RoleDTO> getUserRoles(
             @Parameter(description = "用户ID", example = "1") @PathVariable Long userId
     ) {
         List<UserRole> userRoles = userService.getUserRoles(userId);
-        return ResponseEntity.ok(RoleConverter.toDTOList(userRoles));
+        return RoleConverter.toDTOList(userRoles);
     }
 }
 

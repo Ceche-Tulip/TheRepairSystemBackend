@@ -3,7 +3,7 @@ package org.trs.therepairsystem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.trs.therepairsystem.pojo.User;
+import org.trs.therepairsystem.entity.User;
 import org.trs.therepairsystem.repository.UserRepository;
 
 /**

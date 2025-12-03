@@ -2,6 +2,8 @@ package org.trs.therepairsystem.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,13 +12,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.trs.therepairsystem.pojo.User;
-import org.trs.therepairsystem.pojo.UserRole;
-import org.trs.therepairsystem.pojo.dto.UserDTO;
+import org.trs.therepairsystem.entity.User;
+import org.trs.therepairsystem.entity.UserRole;
+import org.trs.therepairsystem.dto.response.UserDTO;
 import org.trs.therepairsystem.web.converter.UserConverter;
-import org.trs.therepairsystem.web.dto.ChangePasswordRequest;
-import org.trs.therepairsystem.web.dto.UserCreateRequest;
-import org.trs.therepairsystem.web.dto.UserUpdateRequest;
+import org.trs.therepairsystem.dto.request.auth.ChangePasswordRequest;
+import org.trs.therepairsystem.dto.request.user.UserCreateRequest;
+import org.trs.therepairsystem.dto.request.user.UserUpdateRequest;
 import org.trs.therepairsystem.service.UserService;
 import org.trs.therepairsystem.web.annotation.CurrentUser;
 
@@ -33,12 +35,12 @@ public class UserController {
 
     @GetMapping("/{id}")
     @Operation(summary = "获取用户信息", description = "根据ID获取单个用户的详细信息")
-    public ResponseEntity<UserDTO> getUser(@PathVariable Long id) {
+    public UserDTO getUser(@PathVariable Long id) {
         User user = userService.getById(id);
         if (user == null) {
-            return ResponseEntity.notFound().build();
+            throw new RuntimeException("用户不存在");
         }
-        return ResponseEntity.ok(UserConverter.toDTO(user));
+        return UserConverter.toDTO(user);
     }
 
     @GetMapping
@@ -49,9 +51,15 @@ public class UserController {
     }
 
     @PostMapping
-    @Operation(summary = "创建用户", description = "管理员创建新用户")
+    @Operation(summary = "创建新用户", description = "管理员创建新用户账号")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "用户创建成功"),
+        @ApiResponse(responseCode = "400", description = "请求参数错误"),
+        @ApiResponse(responseCode = "403", description = "权限不足"),
+        @ApiResponse(responseCode = "409", description = "用户名已存在")
+    })
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> createUser(@RequestBody UserCreateRequest request) {
+    public UserDTO createUser(@RequestBody UserCreateRequest request) {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(request.getPassword());
@@ -59,16 +67,16 @@ public class UserController {
         user.setPhone(request.getPhone());
         
         User saved = userService.createUser(user);
-        return ResponseEntity.ok(UserConverter.toDTO(saved));
+        return UserConverter.toDTO(saved);
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "更新用户信息", description = "更新用户的基本信息（不包含密码）")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id,
-                                              @RequestBody UserUpdateRequest request) {
+    public UserDTO updateUser(@PathVariable Long id,
+                             @RequestBody UserUpdateRequest request) {
         User existingUser = userService.getById(id);
         if (existingUser == null) {
-            return ResponseEntity.notFound().build();
+            throw new RuntimeException("用户不存在");
         }
         
         if (request.getRealName() != null) {
@@ -79,18 +87,25 @@ public class UserController {
         }
         
         User updated = userService.updateUser(id, existingUser);
-        return ResponseEntity.ok(UserConverter.toDTO(updated));
+        return UserConverter.toDTO(updated);
     }
 
     @GetMapping("/current")
     @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的信息，无需请求体")
-    public ResponseEntity<UserDTO> getCurrent(@Parameter(hidden = true) @CurrentUser User currentUser) {
-        if (currentUser == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        return ResponseEntity.ok(UserConverter.toDTO(currentUser));
+    public UserDTO getCurrent(@Parameter(hidden = true) @CurrentUser User currentUser) {
+        if (currentUser == null) {
+            throw new RuntimeException("用户未登录");
+        }
+        return UserConverter.toDTO(currentUser);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除用户", description = "管理员删除指定用户（将同时删除角色关联）")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "删除成功"),
+        @ApiResponse(responseCode = "403", description = "权限不足"),
+        @ApiResponse(responseCode = "404", description = "用户不存在")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);

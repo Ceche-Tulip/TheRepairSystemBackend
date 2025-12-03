@@ -1,8 +1,8 @@
 package org.trs.therepairsystem.service;
 
 import org.springframework.data.domain.Page;
-import org.trs.therepairsystem.pojo.User;
-import org.trs.therepairsystem.pojo.UserRole;
+import org.trs.therepairsystem.entity.User;
+import org.trs.therepairsystem.entity.UserRole;
 
 import java.util.List;
 

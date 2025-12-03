@@ -1,8 +1,8 @@
 package org.trs.therepairsystem.web.converter;
 
 import org.springframework.data.domain.Page;
-import org.trs.therepairsystem.pojo.UserRole;
-import org.trs.therepairsystem.pojo.dto.RoleDTO;
+import org.trs.therepairsystem.entity.UserRole;
+import org.trs.therepairsystem.dto.response.RoleDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;

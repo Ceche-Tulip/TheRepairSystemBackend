@@ -8,7 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.trs.therepairsystem.pojo.User;
+import org.trs.therepairsystem.entity.User;
 import org.trs.therepairsystem.service.UserService;
 
 import static org.mockito.Mockito.when;

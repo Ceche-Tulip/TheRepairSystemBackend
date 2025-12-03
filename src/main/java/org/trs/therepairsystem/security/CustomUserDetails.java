@@ -2,7 +2,7 @@
 package org.trs.therepairsystem.security;
 
 import lombok.Getter;
-import org.trs.therepairsystem.pojo.User;
+import org.trs.therepairsystem.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

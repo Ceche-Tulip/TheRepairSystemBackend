@@ -2,7 +2,7 @@ package org.trs.therepairsystem.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.trs.therepairsystem.pojo.UserRole;
+import org.trs.therepairsystem.entity.UserRole;
 import org.trs.therepairsystem.repository.RoleRepository;
 
 import java.util.List;

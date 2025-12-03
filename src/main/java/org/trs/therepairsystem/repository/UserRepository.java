@@ -1,7 +1,7 @@
 package org.trs.therepairsystem.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.trs.therepairsystem.pojo.User;
+import org.trs.therepairsystem.entity.User;
 
 import java.util.Optional;
 
