@@ -10,6 +10,6 @@ public class LoginRequest {
     @Schema(description = "用户名", example = "testuser", required = true)
     private String username;
     
-    @Schema(description = "密码", example = "password123", required = true)
+    @Schema(description = "密码", example = "123456", required = true)
     private String password;
 }
