@@ -9,6 +9,8 @@ import java.util.List;
 public interface UserService {
 
     User getById(Long id);
+    
+    // 专门用于前端显示的方法，不包含敏感信息
 
     Page<User> listUsers(int page, int size);
 
@@ -22,11 +24,9 @@ public interface UserService {
 
     List<UserRole> getUserRoles(Long userId);
 
-    boolean login(String username, String password);
-
-    void resetPassword(Long userId);
-
     void changePassword(Long userId, String oldPassword, String newPassword);
+    
+    User findByUsername(String username);
 
 //    public void assignRoles(Long userId, List<Integer> roleIds);
 }

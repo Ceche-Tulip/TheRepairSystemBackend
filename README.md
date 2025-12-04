@@ -491,7 +491,7 @@ mvn spring-boot:run
 ```
 
 ### 访问地址
-- API文档: http://localhost:8080/swagger-ui.html
+- API文档: http://localhost:8080/swagger-ui/index.html#/
 - 应用端点: http://localhost:8080/api/*
 
 ## 总结

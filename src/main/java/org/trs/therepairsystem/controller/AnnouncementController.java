@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
@@ -31,7 +32,12 @@ public class AnnouncementController {
     private final AnnouncementService announcementService;
 
     @PostMapping
-    @Operation(summary = "发布公告", description = "管理员发布系统公告")
+    @Operation(summary = "发布公告", description = "管理员发布系统公告。公告标题和内容不能为空。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "公告发布成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     public AnnouncementDTO createAnnouncement(
             @RequestBody @Validated AnnouncementCreateRequest request,
@@ -46,7 +52,13 @@ public class AnnouncementController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "更新公告", description = "管理员更新公告内容")
+    @Operation(summary = "更新公告", description = "管理员更新公告内容。只有公告创建者才能更新。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "公告更新成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "公告不存在")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     public AnnouncementDTO updateAnnouncement(
             @Parameter(description = "公告ID", example = "1") @PathVariable Long id,
@@ -61,13 +73,18 @@ public class AnnouncementController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除公告", description = "管理员删除公告")
+    @Operation(summary = "删除公告", description = "管理员删除公告。只有公告创建者才能删除。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "公告删除成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "公告不存在")
+    })
     @PreAuthorize("hasRole('ADMIN')")
-    public String deleteAnnouncement(
-            @Parameter(description = "公告ID", example = "1") @PathVariable Long id
+    public ResponseEntity<Void> deleteAnnouncement(
+            @Parameter(description = "公告 ID", example = "1") @PathVariable Long id
     ) {
         announcementService.deleteAnnouncement(id);
-        return "公告删除成功";
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping

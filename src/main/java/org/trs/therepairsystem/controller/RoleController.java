@@ -38,7 +38,13 @@ public class RoleController {
     }
 
     @PostMapping
-    @Operation(summary = "创建新角色", description = "管理员创建新的角色")
+    @Operation(summary = "创建新角色", description = "管理员创建新的角色。角色名称必须唯一。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "角色创建成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "角色名称已存在")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     public RoleDTO createRole(@RequestBody RoleCreateRequest request) {
         UserRole role = new UserRole();
@@ -49,7 +55,14 @@ public class RoleController {
     }
 
     @PutMapping("/{roleId}")
-    @Operation(summary = "更新角色信息", description = "管理员更新指定角色的信息")
+    @Operation(summary = "更新角色信息", description = "管理员更新指定角色的信息。角色名称必须唯一。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "角色更新成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "角色不存在"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "角色名称已存在")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     public RoleDTO updateRole(@PathVariable Integer roleId,
                              @RequestBody RoleCreateRequest request) {
@@ -65,11 +78,17 @@ public class RoleController {
     }
 
     @DeleteMapping("/{roleId}")
-    @Operation(summary = "删除角色", description = "管理员删除指定角色（注意：删除前请确保没有用户使用此角色）")
+    @Operation(summary = "删除角色", description = "管理员删除指定角色。注意：删除前请确保没有用户使用此角色。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "204", description = "删除成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "角色不存在"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "角色正在被使用，无法删除")
+    })
     @PreAuthorize("hasRole('ADMIN')")
-    public String deleteRole(@Parameter(description = "角色ID", example = "1") @PathVariable Integer roleId) {
+    public ResponseEntity<Void> deleteRole(@Parameter(description = "角色ID", example = "1") @PathVariable Integer roleId) {
         roleService.deleteRole(roleId);
-        return "删除成功";
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/users/{userId}/assign")

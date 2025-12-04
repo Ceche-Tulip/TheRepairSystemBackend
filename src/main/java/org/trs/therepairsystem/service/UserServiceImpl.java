@@ -25,18 +25,14 @@ public class UserServiceImpl implements UserService {
     private RoleRepository roleRepository;
     @Autowired
     private UserRoleRelRepository userRoleRelRepository;
+    
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-//    @Override
-//    public User getById(Long id) {
-//        return userRepository.findById(id).orElse(null);
-//    }
-    // 暂时改为不返回密码字段
     @Override
     public User getById(Long id) {
-        User user = userRepository.findById(id).orElse(null);
-        if (user != null) user.setPassword(null);  // 关键
-        return user;
+        return userRepository.findById(id).orElse(null);
     }
+
 
 
     @Override
@@ -52,8 +48,31 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User updateUser(Long id, User user) {
-        user.setId(id);
-        return userRepository.save(user);
+        // 获取现有用户信息
+        User existingUser = getById(id);
+        
+        // 检查用户名是否重复（如果要更新用户名）
+        if (user.getUsername() != null && !user.getUsername().equals(existingUser.getUsername())) {
+            if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+                throw new RuntimeException("用户名已存在");
+            }
+            existingUser.setUsername(user.getUsername());
+        }
+        
+        // 检查手机号是否重复（如果要更新手机号）
+        if (user.getPhone() != null && !user.getPhone().equals(existingUser.getPhone())) {
+            if (userRepository.findByPhone(user.getPhone()).isPresent()) {
+                throw new RuntimeException("手机号已存在");
+            }
+            existingUser.setPhone(user.getPhone());
+        }
+        
+        // 更新其他非敏感字段
+        if (user.getRealName() != null) {
+            existingUser.setRealName(user.getRealName());
+        }
+        
+        return userRepository.save(existingUser);
     }
 
     @Override
@@ -96,20 +115,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean login(String username, String password) {
-        return userRepository.findByUsername(username)
-                .map(u -> matches(password, u.getPassword()))
-                .orElse(false);
-    }
-
-    @Override
-    public void resetPassword(Long userId) {
-        User user = getById(userId);
-        user.setPassword(encode("123456"));
-        userRepository.save(user);
-    }
-
-    @Override
     public void changePassword(Long userId, String oldPassword, String newPassword) {
         User user = getById(userId);
         if (!matches(oldPassword, user.getPassword())) {
@@ -117,6 +122,11 @@ public class UserServiceImpl implements UserService {
         }
         user.setPassword(encode(newPassword));
         userRepository.save(user);
+    }
+
+    @Override
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
     }
 
 //    @Override
@@ -138,11 +148,11 @@ public class UserServiceImpl implements UserService {
 //    }
 
     private String encode(String raw) {
-        return new BCryptPasswordEncoder().encode(raw);
+        return passwordEncoder.encode(raw);
     }
 
     private boolean matches(String raw, String encoded) {
-        return new BCryptPasswordEncoder().matches(raw, encoded);
+        return passwordEncoder.matches(raw, encoded);
     }
 }
 

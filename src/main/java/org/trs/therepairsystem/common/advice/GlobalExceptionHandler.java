@@ -77,15 +77,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         logger.warn("数据库约束异常: {}", ex.getMessage());
         String message = "数据操作失败，可能存在重复数据";
-        if (ex.getMessage().contains("username")) {
+        String errorMsg = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+        
+        // 更精确的约束字段识别
+        if (errorMsg.contains("username") || errorMsg.contains("users.username") || errorMsg.contains("idx_username")) {
             message = "用户名已存在";
-        } else if (ex.getMessage().contains("phone")) {
+        } else if (errorMsg.contains("phone") || errorMsg.contains("users.phone") || errorMsg.contains("idx_phone")) {
             message = "手机号已存在";
-        } else if (ex.getMessage().contains("role_name")) {
+        } else if (errorMsg.contains("role_name") || errorMsg.contains("roles.role_name")) {
             message = "角色名称已存在";
-        } else if (ex.getMessage().contains("name")) {
+        } else if (errorMsg.contains("email") || errorMsg.contains("users.email")) {
+            message = "邮箱已存在";
+        } else if (errorMsg.contains("name")) {
             message = "名称已存在";
         }
+        
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.conflict(message));
     }
@@ -108,6 +114,68 @@ public class GlobalExceptionHandler {
         logger.warn("访问被拒绝: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.forbidden("没有权限访问该资源"));
+    }
+
+    /**
+     * 处理业务异常
+     */
+    @ExceptionHandler(org.trs.therepairsystem.common.exception.BusinessException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBusinessException(org.trs.therepairsystem.common.exception.BusinessException ex) {
+        logger.warn("业务异常: {}", ex.getMessage());
+        
+        String message = ex.getMessage();
+        
+        // 根据异常信息返回适当的状态码
+        if (message != null) {
+            if (message.contains("已存在") || message.contains("重复")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(ApiResponse.conflict(message));
+            } else if (message.contains("不存在") || message.contains("未找到")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound(message));
+            } else if (message.contains("密码错误") || message.contains("认证失败")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.unauthorized(message));
+            } else if (message.contains("权限") || message.contains("无权")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.forbidden(message));
+            }
+        }
+        
+        // 其他业务异常返回400 Bad Request
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.badRequest(message != null ? message : "业务处理失败"));
+    }
+
+    /**
+     * 处理运行时异常（业务逻辑异常）
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
+        logger.warn("业务逻辑异常: {}", ex.getMessage());
+        
+        String message = ex.getMessage();
+        
+        // 根据异常信息返回适当的状态码
+        if (message != null) {
+            if (message.contains("已存在") || message.contains("重复")) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(ApiResponse.conflict(message));
+            } else if (message.contains("不存在") || message.contains("未找到")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound(message));
+            } else if (message.contains("密码错误") || message.contains("认证失败")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(ApiResponse.unauthorized(message));
+            } else if (message.contains("权限") || message.contains("无权")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(ApiResponse.forbidden(message));
+            }
+        }
+        
+        // 其他运行时异常返回400 Bad Request
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.badRequest(message != null ? message : "请求处理失败"));
     }
 
     /**
