@@ -74,7 +74,7 @@ public class RepairOrder {
             createTime = LocalDateTime.now();
         }
         if (status == null) {
-            status = RepairOrderStatus.PENDING; // 用户提交后直接进入待处理状态
+            status = RepairOrderStatus.SUBMITTED; // 默认状态为已提交，等待分配工程师
         }
     }
 
@@ -103,7 +103,9 @@ public class RepairOrder {
     }
 
     public boolean canCancel() {
-        return status == RepairOrderStatus.DRAFT || status == RepairOrderStatus.PENDING;
+        return status == RepairOrderStatus.DRAFT 
+            || status == RepairOrderStatus.SUBMITTED 
+            || status == RepairOrderStatus.PENDING;
     }
 
     public boolean isAssignedTo(Long engineerId) {

@@ -139,11 +139,64 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             throw new BusinessException("只能提交草稿状态的工单");
         }
         
-        // 更新状态为待处理
-        order.setStatus(RepairOrderStatus.PENDING);
+        // 更新状态为已提交
+        order.setStatus(RepairOrderStatus.SUBMITTED);
         RepairOrder savedOrder = repairOrderRepository.save(order);
         
+        // 尝试自动分配工程师
+        try {
+            autoAssignEngineer(null, savedOrder.getId());
+            log.info("草稿工单 {} 自动分配成功", savedOrder.getId());
+        } catch (Exception e) {
+            log.warn("草稿工单 {} 自动分配失败: {}, 等待管理员手动分配", savedOrder.getId(), e.getMessage());
+        }
+        
         log.info("用户 {} 提交了草稿工单 {}", userId, orderId);
+        return convertToResponse(savedOrder);
+    }
+
+    @Override
+    public RepairOrderResponse updateDraft(Long userId, Long orderId, RepairOrderSubmitRequest request) {
+        // 查找工单
+        RepairOrder order = repairOrderRepository.findById(orderId)
+            .orElseThrow(() -> new BusinessException("工单不存在"));
+        
+        // 验证工单属于当前用户
+        if (!order.getSubmitUser().getId().equals(userId)) {
+            throw new BusinessException("无权限操作此工单");
+        }
+        
+        // 验证工单状态是草稿
+        if (order.getStatus() != RepairOrderStatus.DRAFT) {
+            throw new BusinessException("只能修改草稿状态的工单");
+        }
+        
+        // 验证建筑
+        Building building = buildingRepository.findById(request.getBuildingId())
+            .orElseThrow(() -> new BusinessException("建筑不存在"));
+
+        // 验证楼层
+        Floor floor = floorRepository.findById(request.getFloorId())
+            .orElseThrow(() -> new BusinessException("楼层不存在"));
+
+        // 验证楼层属于指定建筑
+        if (!floor.getBuilding().getId().equals(request.getBuildingId())) {
+            throw new BusinessException("楼层不属于指定建筑");
+        }
+
+        // 验证故障类型
+        FaultType faultType = faultTypeRepository.findById(request.getFaultTypeId())
+            .orElseThrow(() -> new BusinessException("故障类型不存在"));
+        
+        // 更新草稿内容
+        order.setBuilding(building);
+        order.setFloor(floor);
+        order.setFaultType(faultType);
+        order.setDescription(request.getDescription());
+        
+        RepairOrder savedOrder = repairOrderRepository.save(order);
+        
+        log.info("用户 {} 修改了草稿工单 {}", userId, orderId);
         return convertToResponse(savedOrder);
     }
 

@@ -60,7 +60,13 @@ public class RepairOrderController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "提交草稿工单", description = "将已保存的草稿工单提交审核")
+    @Operation(summary = "提交草稿工单", description = "将已保存的草稿工单提交，状态变为已提交并尝试自动分配工程师，如果自动分配失败则等待管理员手动分配")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "提交成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "工单状态不允许提交或请求参数错误"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "没有权限操作此工单"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "工单不存在")
+    })
     @PutMapping("/{orderId}/submit")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> submitDraft(
@@ -68,6 +74,24 @@ public class RepairOrderController {
             @Parameter(description = "工单ID") @PathVariable Long orderId) {
         
         RepairOrderResponse response = repairOrderService.submitDraft(userDetails.getUserId(), orderId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @Operation(summary = "修改草稿工单", description = "用户可以修改自己创建的草稿状态工单的内容，包括建筑、楼层、故障类型和描述")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "修改成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "工单状态不允许修改或请求参数错误"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "没有权限操作此工单"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "工单不存在")
+    })
+    @PutMapping("/{orderId}/draft")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<RepairOrderResponse>> updateDraft(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @Parameter(description = "工单ID") @PathVariable Long orderId,
+            @Valid @RequestBody RepairOrderSubmitRequest request) {
+        
+        RepairOrderResponse response = repairOrderService.updateDraft(userDetails.getUserId(), orderId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -146,7 +170,13 @@ public class RepairOrderController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "用户取消工单", description = "用户取消自己提交的未处理工单")
+    @Operation(summary = "用户取消工单", description = "用户取消自己提交的工单。可取消状态：待提交、已提交、待处理。一旦工程师开始处理则不可取消。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "取消成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "工单状态不允许取消"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "没有权限取消此工单"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "工单不存在")
+    })
     @PutMapping("/{orderId}/cancel")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> cancelOrder(
@@ -158,7 +188,12 @@ public class RepairOrderController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "管理员强制取消工单", description = "管理员强制取消任意工单")
+    @Operation(summary = "管理员强制取消工单", description = "管理员可以强制取消任意状态的工单，包括已在处理中的工单。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "取消成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "工单不存在")
+    })
     @PutMapping("/{orderId}/admin-cancel")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> adminCancelOrder(

@@ -29,6 +29,11 @@ public interface RepairOrderService {
     RepairOrderResponse submitDraft(Long userId, Long orderId);
 
     /**
+     * 修改草稿工单
+     */
+    RepairOrderResponse updateDraft(Long userId, Long orderId, RepairOrderSubmitRequest request);
+
+    /**
      * 管理员分配工程师
      */
     RepairOrderResponse assignEngineer(Long adminId, Long orderId, RepairOrderAssignRequest request);
