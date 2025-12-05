@@ -64,13 +64,22 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             .floor(floor)
             .faultType(faultType)
             .description(request.getDescription())
-            .status(RepairOrderStatus.PENDING) // 直接进入待处理状态
+            .status(RepairOrderStatus.SUBMITTED) // 提交后状态为已提交
             .createTime(LocalDateTime.now())
             .build();
 
         RepairOrder savedOrder = repairOrderRepository.save(order);
         
         log.info("用户 {} 提交了维修工单 {}", userId, savedOrder.getId());
+        
+        // 尝试自动分配工程师
+        try {
+            autoAssignEngineer(null, savedOrder.getId());
+            log.info("工单 {} 自动分配成功", savedOrder.getId());
+        } catch (Exception e) {
+            log.warn("工单 {} 自动分配失败: {}, 等待管理员手动分配", savedOrder.getId(), e.getMessage());
+        }
+        
         return convertToResponse(savedOrder);
     }
 
@@ -173,6 +182,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         // 分配工程师
         order.setEngineer(engineer);
         order.setAdmin(admin);
+        order.setStatus(RepairOrderStatus.PENDING); // 分配成功后状态变为待处理
         RepairOrder savedOrder = repairOrderRepository.save(order);
 
         log.info("管理员 {} 将工单 {} 分配给工程师 {}", adminId, orderId, request.getEngineerId());
@@ -181,8 +191,12 @@ public class RepairOrderServiceImpl implements RepairOrderService {
 
     @Override
     public RepairOrderResponse autoAssignEngineer(Long adminId, Long orderId) {
-        User admin = userRepository.findById(adminId)
-            .orElseThrow(() -> new BusinessException("管理员不存在"));
+        // adminId可以为null，表示系统自动调用
+        User admin = null;
+        if (adminId != null) {
+            admin = userRepository.findById(adminId)
+                .orElseThrow(() -> new BusinessException("管理员不存在"));
+        }
 
         RepairOrder order = repairOrderRepository.findById(orderId)
             .orElseThrow(() -> new BusinessException("工单不存在"));
@@ -209,9 +223,14 @@ public class RepairOrderServiceImpl implements RepairOrderService {
 
         order.setEngineer(engineer);
         order.setAdmin(admin);
+        order.setStatus(RepairOrderStatus.PENDING); // 分配成功后状态变为待处理
         RepairOrder savedOrder = repairOrderRepository.save(order);
 
-        log.info("管理员 {} 自动将工单 {} 分配给工程师 {}", adminId, orderId, selectedEngineerId);
+        if (adminId != null) {
+            log.info("管理员 {} 将工单 {} 分配给工程师 {}", adminId, orderId, selectedEngineerId);
+        } else {
+            log.info("系统自动将工单 {} 分配给工程师 {}", orderId, selectedEngineerId);
+        }
         return convertToResponse(savedOrder);
     }
 

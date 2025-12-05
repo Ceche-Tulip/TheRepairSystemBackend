@@ -91,7 +91,7 @@ public class RepairOrder {
 
     // 业务方法
     public boolean canAssignEngineer() {
-        return status == RepairOrderStatus.PENDING || status == RepairOrderStatus.IN_PROGRESS;
+        return status == RepairOrderStatus.SUBMITTED;
     }
 
     public boolean canAccept() {

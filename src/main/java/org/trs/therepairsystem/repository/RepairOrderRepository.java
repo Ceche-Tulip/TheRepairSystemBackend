@@ -37,8 +37,8 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
                                                @Param("status") RepairOrderStatus status, 
                                                Pageable pageable);
 
-    // 待分配的工单（未分配工程师的 PENDING 状态）
-    @Query("SELECT ro FROM RepairOrder ro WHERE ro.status = 'PENDING' AND ro.engineer IS NULL ORDER BY ro.createTime ASC")
+    // 待分配的工单（未分配工程师的 SUBMITTED 状态）
+    @Query("SELECT ro FROM RepairOrder ro WHERE ro.status = 'SUBMITTED' AND ro.engineer IS NULL ORDER BY ro.createTime ASC")
     Page<RepairOrder> findUnassignedPendingOrders(Pageable pageable);
 
     // 根据故障类型查询

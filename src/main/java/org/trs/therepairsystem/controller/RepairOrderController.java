@@ -32,7 +32,13 @@ public class RepairOrderController {
 
     private final RepairOrderService repairOrderService;
 
-    @Operation(summary = "用户提交维修工单", description = "普通用户提交新的维修工单，直接进入待处理状态")
+    @Operation(summary = "用户提交维修工单", description = "普通用户提交新的维修工单，状态变为已提交，等待系统自动分配或管理员手动分配工程师")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "提交成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "未认证"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足")
+    })
     @PostMapping("/submit")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> submitOrder(
@@ -65,7 +71,13 @@ public class RepairOrderController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "管理员分配工程师", description = "管理员手动为工单分配指定工程师")
+    @Operation(summary = "管理员分配工程师", description = "管理员手动为工单分配指定工程师，分配成功后工单状态变为待处理")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "分配成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "请求参数错误或工单状态不允许分配"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "工单或工程师不存在")
+    })
     @PutMapping("/{orderId}/assign")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> assignEngineer(
@@ -78,7 +90,13 @@ public class RepairOrderController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "自动分配工程师", description = "系统根据故障类型和区域自动分配工程师")
+    @Operation(summary = "自动分配工程师", description = "系统根据故障类型和区域自动分配工程师。如果没有符合条件的工程师，分配失败，需要管理员手动分配。分配成功后工单状态变为待处理。")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "分配成功"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "无符合条件的工程师或工单状态不允许分配"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "权限不足"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "工单不存在")
+    })
     @PutMapping("/{orderId}/auto-assign")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> autoAssignEngineer(
