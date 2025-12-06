@@ -37,7 +37,7 @@ public class RepairRatingController {
 
     @Operation(summary = "获取工程师评价统计", description = "获取指定工程师的评价统计信息")
     @GetMapping("/engineer/{engineerId}/stats")
-    @PreAuthorize("hasRole('ENGINEER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER') or hasRole('ENGINEER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Object>> getEngineerRatingStats(
             @Parameter(description = "工程师ID") @PathVariable Long engineerId) {
         
@@ -47,7 +47,7 @@ public class RepairRatingController {
 
     @Operation(summary = "获取工程师评价列表", description = "获取指定工程师的所有评价")
     @GetMapping("/engineer/{engineerId}")
-    @PreAuthorize("hasRole('ENGINEER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('USER') or hasRole('ENGINEER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Page<RepairRatingResponse>>> getEngineerRatings(
             @Parameter(description = "工程师ID") @PathVariable Long engineerId,
             @Parameter(description = "页码") @RequestParam(defaultValue = "0") int page,
