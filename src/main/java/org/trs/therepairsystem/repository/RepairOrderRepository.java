@@ -97,6 +97,14 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
 
     @Query("SELECT COUNT(ro) FROM RepairOrder ro WHERE ro.engineer.id = :engineerId AND ro.status = :status")
     long countByEngineerIdAndStatus(@Param("engineerId") Long engineerId, @Param("status") RepairOrderStatus status);
+    
+    // 统计用户的所有工单（不区分状态）
+    @Query("SELECT COUNT(ro) FROM RepairOrder ro WHERE ro.submitUser.id = :userId")
+    long countBySubmitUserId(@Param("userId") Long userId);
+    
+    // 统计工程师的所有工单（不区分状态）
+    @Query("SELECT COUNT(ro) FROM RepairOrder ro WHERE ro.engineer.id = :engineerId")
+    long countByEngineerId(@Param("engineerId") Long engineerId);
 
     // 今日统计
     @Query("SELECT COUNT(ro) FROM RepairOrder ro WHERE DATE(ro.createTime) = CURRENT_DATE")

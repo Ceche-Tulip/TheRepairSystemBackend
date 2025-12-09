@@ -100,11 +100,12 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "删除用户", description = "管理员删除指定用户（将同时删除角色关联）")
+    @Operation(summary = "删除用户", description = "管理员删除指定用户（将同时删除角色关联）。注意：如果用户存在关联的维修工单（作为报修人或工程师），则无法删除。")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "删除成功"),
         @ApiResponse(responseCode = "403", description = "权限不足"),
-        @ApiResponse(responseCode = "404", description = "用户不存在")
+        @ApiResponse(responseCode = "404", description = "用户不存在"),
+        @ApiResponse(responseCode = "409", description = "用户存在关联的维修工单，无法删除")
     })
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {

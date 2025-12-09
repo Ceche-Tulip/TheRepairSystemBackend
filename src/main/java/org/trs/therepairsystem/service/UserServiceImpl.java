@@ -12,6 +12,8 @@ import org.trs.therepairsystem.entity.UserRoleRel;
 import org.trs.therepairsystem.repository.RoleRepository;
 import org.trs.therepairsystem.repository.UserRepository;
 import org.trs.therepairsystem.repository.UserRoleRelRepository;
+import org.trs.therepairsystem.repository.RepairOrderRepository;
+import org.trs.therepairsystem.common.exception.BusinessException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,6 +27,8 @@ public class UserServiceImpl implements UserService {
     private RoleRepository roleRepository;
     @Autowired
     private UserRoleRelRepository userRoleRelRepository;
+    @Autowired
+    private RepairOrderRepository repairOrderRepository;
     
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -78,6 +82,22 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long id) {
+        // 检查用户是否存在
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
+        
+        // 检查用户是否有关联的维修工单（作为提交用户或工程师）
+        long orderCountAsSubmitter = repairOrderRepository.countBySubmitUserId(id);
+        long orderCountAsEngineer = repairOrderRepository.countByEngineerId(id);
+        
+        if (orderCountAsSubmitter > 0) {
+            throw new BusinessException("无法删除该用户，该用户存在关联的维修工单（作为报修人）");
+        }
+        
+        if (orderCountAsEngineer > 0) {
+            throw new BusinessException("无法删除该用户，该用户存在关联的维修工单（作为工程师）");
+        }
+        
         // 先删除用户角色关联，再删除用户（避免外键约束问题）
         userRoleRelRepository.deleteByUserId(id);
         userRepository.deleteById(id);
