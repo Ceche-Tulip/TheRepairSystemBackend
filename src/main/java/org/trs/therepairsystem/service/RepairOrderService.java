@@ -71,7 +71,7 @@ public interface RepairOrderService {
     /**
      * 根据ID获取工单详情
      */
-    RepairOrderResponse getOrderById(Long orderId);
+    RepairOrderResponse getOrderById(Long requesterId, boolean isAdmin, Long orderId);
 
     /**
      * 获取用户的工单列表

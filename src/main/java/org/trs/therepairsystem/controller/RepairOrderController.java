@@ -209,9 +209,12 @@ public class RepairOrderController {
     @GetMapping("/{orderId}")
     @PreAuthorize("hasRole('USER') or hasRole('ENGINEER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> getOrderById(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @Parameter(description = "工单ID") @PathVariable Long orderId) {
-        
-        RepairOrderResponse response = repairOrderService.getOrderById(orderId);
+
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        RepairOrderResponse response = repairOrderService.getOrderById(userDetails.getUserId(), isAdmin, orderId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

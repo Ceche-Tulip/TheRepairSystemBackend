@@ -1,241 +1,4 @@
-<<<<<<< HEAD
-📘 在线报修系统 — 开发说明文档（当前进度版）
-1. 项目简介
-
-在线报修系统是一个帮助学校、企业或组织在线提交维修申请、由工程师接单并处理的系统。包含角色：
-
-普通用户（上报设备故障）
-
-工程师（负责区域，查看、处理工单）
-
-管理员（管理用户、角色、区域、设备、工单）
-
-系统包括：用户管理、角色权限、区域层级管理、工单上报与流转、统计等。
-
-本项目基于 Spring Boot + Spring Security + JWT + JPA + MySQL 实现后端 API，未来可配套 Vue 或 React 实现前端。
-
-2. 技术栈说明
-✔ 后端技术
-
-Spring Boot 3.x
-
-Spring Security + JWT（用户认证与权限控制）
-
-Spring Data JPA（ORM 映射）
-
-MySQL（数据库）
-
-Lombok（简化开发）
-
-Swagger / OpenAPI（接口文档）
-
-✔ 前端技术（未来规划）
-
-Vue3 / React（待定）
-
-Ant Design / Element Plus（待定）
-
-3. 当前数据结构设计（已完成）
-
-你已经完成了系统核心的数据结构，包括：
-
-✔ 用户与角色体系
-
-users（用户）
-
-user_role（角色）
-
-user_role_rel（用户-角色关系）
-
-并支持用户多角色，例如用户可以同时是：
-
-管理员（ADMIN）
-
-工程师（ENGINEER）
-
-✔ 区域层级（草稿）
-
-层级为：
-
-楼栋 → 楼层
-
-实体类部分已经在生成中，例如 building、floor。
-
-4. 当前已完成模块
-✔ 4.1 用户管理模块（基础版本）
-
-用户增删改查（CRUD）
-
-注册与密码加密（BCrypt）
-
-用户多角色设计（多对多）
-
-✔ 4.2 角色管理模块（基础版本）
-
-角色增删改查
-
-查询用户角色
-
-为用户分配角色（assignRoles）
-
-✔ 4.3 用户认证系统
-
-JWT 登录
-
-JWT 过滤器
-
-全局认证
-
-Spring Security 基础配置
-
-✔ 4.4 Swagger API 文档
-
-你已经有 Swagger API 文档输出能力，可用于调试。
-
-5. 当前正在开发的模块（进行中）
-🔧 5.1 角色权限体系完善
-
-近期你正在处理：
-
-删除角色返回 403（因为需要 ADMIN 权限）
-
-修复 assignRoles 的事务问题
-
-对角色操作设置 admin-only 权限
-
-角色与用户关系更新的报错（EntityManager remove 无事务）
-
-🔧 5.2 测试阶段遇到的问题整理与修复
-
-你已经提出的问题包括：
-
-JSON 数组 vs JSON 对象（[] 与 {} 区别）
-
-删除用户是否需要删除关联角色
-
-Content-Type 导致的 415 错误
-
-Spring Security 的权限规则放置位置
-
-这些属于 “用户模块 + 角色模块” 的深化完善阶段。
-
-6. 待开发模块（完整功能蓝图）
-🟦 6.1 区域管理模块（未完成）
-
-校区/楼栋/楼层/教室/设备的 CRUD
-
-工程师负责区域的绑定
-
-根据区域筛选工单
-
-🟥 6.2 工单（报修）模块（核心业务）
-
-该模块未开发，是系统的核心：
-
-普通用户提交工单（设备 + 描述 + 图片）
-
-工程师查看负责区域的待处理工单
-
-工程师接单、处理、完成
-
-管理员查看全部工单
-
-支持状态流转：
-
-待处理 → 已接单 → 处理中 → 已完成/已取消（一共五种状态）
-
-🟨 6.3 统计报表（非必需，但常用）
-
-工程师处理量排名
-
-常见故障类型统计
-
-区域故障统计
-
-🟩 6.4 系统与日志模块（可选）
-
-操作日志
-
-工单消息通知（邮件/消息推送）
-
-7. 当前开发进度（百分比）
-
-根据一个典型在线报修系统包含的模块，可粗略估算：
-
-模块	权重	完成度	得分
-用户管理	10%	80%	8%
-角色/权限	15%	70%	10.5%
-区域管理	20%	20%	4%
-工单系统（核心）	35%	0%	0%
-统计报表	10%	0%	0%
-通知系统/日志	10%	0%	0%
-🎯 当前总体进度 ≈ 22% - 25%
-
-你已经完成了：
-
-登录 / 权限体系基础
-
-用户与角色系统
-
-API 文档
-
-Spring Security 框架
-这些都是系统最难也最底层的部分。
-
-剩下的主要是业务功能开发。
-
-8. 下一步开发建议（按顺序）
-① 完成角色权限体系的细化（你当前正在做）
-
-控制 /api/roles/** 只允许 ADMIN 访问
-
-修复 assignRoles 时的事务问题（加上 @Transactional）
-
-② 完成区域管理模块（重要）
-
-完成校区 → 设备实体类与 CRUD
-
-工程师绑定负责区域
-
-③ 开发工单模块（核心）
-
-工单实体类
-
-工单提交 API
-
-工单状态流转
-
-工程师的“我的工单”
-
-④ 开发前端页面（若需要）
-
-用户端：报修页面、我的工单
-
-工程师端：待处理工单、处理工单
-
-管理端：用户管理、角色管理、区域管理、工单管理
-
-📌 总结
-
-你已经成功完成了系统中最底层、最复杂的部分：
-
-✔ 用户体系
-✔ 角色体系
-✔ JWT 登录
-✔ Spring Security 框架
-✔ Swagger 文档
-
-接下来主要是围绕业务开发即可。
-
-如果你愿意，我可以继续帮你：
-
-📌 给出完整的项目目录结构规划
-📌 为你自动生成全部模块的 API 设计
-📌 为你生成工单系统的数据库表结构
-📌 自动生成区域管理模块的实体类 + Service + Controller 示例
-📌 帮你写一份可用于答辩/报告的项目设计文档
-=======
-# TheRepairSystem - 维修工单系统后端开发总结
+﻿# TheRepairSystem - 维修工单系统后端开发总结
 
 ## 项目概述
 
@@ -243,54 +6,54 @@ TheRepairSystem 是一个基于 Spring Boot 3.3.5 的维修工单管理系统后
 
 ## 技术栈
 
-- **框架**: Spring Boot 3.3.5
-- **数据库**: MySQL + JPA/Hibernate
-- **安全**: Spring Security + JWT
-- **文档**: Swagger/OpenAPI 3
-- **构建工具**: Maven
-- **Java版本**: JDK 21
+- 框架: Spring Boot 3.3.5
+- 数据库: MySQL + JPA/Hibernate
+- 安全: Spring Security + JWT
+- 文档: Swagger/OpenAPI 3
+- 构建工具: Maven
+- Java版本: JDK 21
 
 ## 核心功能模块
 
-### 1. 用户管理模块 (User Management)
-- **用户注册/登录**: JWT token 认证
-- **角色权限**: 支持普通用户、工程师、管理员三种角色
-- **用户信息管理**: 基本信息维护
+### 1. 用户管理模块
+- 用户注册/登录: JWT token 认证
+- 角色权限: 支持普通用户、工程师、管理员三种角色
+- 用户信息管理: 基本信息维护
 
-### 2. 维修工单模块 (Repair Order Management)
-- **工单生命周期**: DRAFT → PENDING → IN_PROGRESS → COMPLETED → CLOSED
-- **用户功能**: 
+### 2. 维修工单模块
+- 工单生命周期: DRAFT -> PENDING -> IN_PROGRESS -> COMPLETED -> CLOSED
+- 用户功能:
   - 提交维修申请
   - 保存草稿/提交草稿
   - 查看工单状态
   - 关闭工单并评价
-- **工程师功能**:
+- 工程师功能:
   - 接收工单
   - 完成维修工作
   - 查看个人工单
-- **管理员功能**:
+- 管理员功能:
   - 分配工程师
   - 查看所有工单
   - 工单统计
 
-### 3. 评价系统模块 (Rating System)
-- **评价提交**: 用户对完成的工单进行1-5星评价
-- **评价查询**: 支持按工单、工程师、用户等维度查询
-- **统计功能**: 工程师评价统计、平均分计算
+### 3. 评价系统模块
+- 评价提交: 用户对完成的工单进行 1-5 星评价
+- 评价查询: 支持按工单、工程师、用户等维度查询
+- 统计功能: 工程师评价统计、平均分计算
 
-### 4. 基础数据模块 (Basic Data)
-- **建筑楼层管理**: 支持多建筑、多楼层
-- **故障类型管理**: 可配置的故障分类
-- **工程师技能配置**: 工程师擅长的故障类型和负责区域
+### 4. 基础数据模块
+- 建筑楼层管理: 支持多建筑、多楼层
+- 故障类型管理: 可配置的故障分类
+- 工程师技能配置: 工程师擅长的故障类型和负责区域
 
-### 5. 权限安全模块 (Security)
-- **JWT认证**: 无状态token认证
-- **角色权限控制**: 基于角色的访问控制(RBAC)
-- **接口权限**: 细粒度的API权限控制
+### 5. 权限安全模块
+- JWT 认证: 无状态 token 认证
+- 角色权限控制: 基于角色的访问控制 (RBAC)
+- 接口权限: 细粒度 API 权限控制
 
 ## 项目目录结构
 
-```
+```text
 src/
 ├── main/
 │   ├── java/org/trs/therepairsystem/
@@ -364,145 +127,87 @@ src/
         └── controller/                             # 控制器测试
 ```
 
-## 核心文件说明
+## 密码加密说明（重要）
 
-### 启动类
-- **TheRepairSystemApplication.java**: Spring Boot应用主启动类
+- 当前后端密码算法为 BCrypt。
+- 在 SecurityConfig 中通过 new BCryptPasswordEncoder() 配置。
+- BCrypt 是单向哈希，不可逆，不能从密文还原明文。
+- 同一个明文每次加密结果都可能不同，这是正常现象（随机盐）。
 
-### 实体层 (Entity)
-- **User.java**: 用户基本信息，支持多角色
-- **RepairOrder.java**: 维修工单核心实体，包含完整生命周期状态管理
-- **RepairRating.java**: 评价实体，支持1-5星评价和评论
-- **Building/Floor.java**: 建筑楼层实体，支持层级结构
-- **FaultType.java**: 故障类型分类
-- **EngineerAreaRel/EngineerFaultRel.java**: 工程师技能和区域配置
+### 生成与验证 BCrypt 密文
 
-### 控制器层 (Controller)
-- **RepairOrderController.java**: 提供30+个工单相关API接口
-- **RepairRatingController.java**: 提供评价查询和统计接口
-- **UserController/RoleController.java**: 用户和角色管理接口
-- **AuthController.java**: 登录认证接口
+项目已提供工具类:
 
-### 服务层 (Service)
-- **RepairOrderService**: 工单业务逻辑，包含状态流转、权限验证
-- **RepairRatingService**: 评价业务逻辑，支持统计分析
-- **UserService**: 用户管理业务逻辑
+- 文件: src/test/java/org/trs/UseBCrypt.java
+- 作用:
+  - 传 1 个参数: 生成密文
+  - 传 2 个参数: 验证明文与密文是否匹配
 
-### 安全层 (Security)
-- **SecurityConfig.java**: Spring Security配置，定义认证和授权规则
-- **JwtUtil.java**: JWT token生成和验证
-- **CustomUserDetails**: 自定义用户认证信息
+示例:
 
-## 主要功能特性
+```bash
+# 生成 admin 的 BCrypt 密文
+.\mvnw -q -DskipTests test-compile exec:java -Dexec.mainClass=org.trs.UseBCrypt -Dexec.args="admin"
 
-### 1. 完整的工单流程
-- **草稿保存**: 支持保存草稿，稍后提交
-- **自动分配**: 根据工程师技能和区域自动推荐
-- **状态追踪**: 完整的工单状态流转
-- **权限控制**: 不同角色拥有不同操作权限
-
-### 2. 灵活的权限系统
-- **基于角色的权限控制**: USER、ENGINEER、ADMIN
-- **API级别权限**: 每个接口都有精确的权限控制
-- **JWT无状态认证**: 支持分布式部署
-
-### 3. 丰富的查询功能
-- **多维度筛选**: 支持按状态、时间、用户等多种条件查询
-- **分页支持**: 所有列表接口都支持分页
-- **统计分析**: 工单统计、评价统计等
-
-### 4. 完善的评价系统
-- **评价提交**: 工单完成后用户可进行评价
-- **评价查询**: 多维度的评价查询和统计
-- **工程师评价**: 工程师服务质量评价体系
-
-## API接口总览
-
-### 认证相关
-- `POST /api/auth/login` - 用户登录
-
-### 工单管理
-- `POST /api/repair-orders/submit` - 提交工单
-- `POST /api/repair-orders/draft` - 保存草稿
-- `PUT /api/repair-orders/{orderId}/submit` - 提交草稿
-- `PUT /api/repair-orders/{orderId}/assign` - 分配工程师
-- `PUT /api/repair-orders/{orderId}/accept` - 工程师接单
-- `PUT /api/repair-orders/{orderId}/complete` - 完成工单
-- `PUT /api/repair-orders/{orderId}/close` - 关闭工单并评价
-- `GET /api/repair-orders/my` - 查看我的工单
-- `GET /api/repair-orders/engineer` - 工程师工单列表
-- `GET /api/repair-orders/admin/all` - 管理员查询所有工单
-
-### 评价管理
-- `GET /api/ratings/order/{orderId}` - 获取工单评价
-- `GET /api/ratings/engineer/{engineerId}/stats` - 工程师评价统计
-- `GET /api/ratings/engineer/{engineerId}` - 工程师评价列表
-- `GET /api/ratings/my` - 我的评价列表
-- `GET /api/ratings/all` - 所有评价（管理员）
-
-### 用户管理
-- `GET /api/users/profile` - 获取用户信息
-- `GET /api/roles` - 获取角色列表
-
-## 开发完成情况
-
-✅ **已完成功能**:
-1. 用户认证与权限管理
-2. 完整的工单生命周期管理
-3. 草稿保存和提交功能
-4. 工程师自动推荐系统
-5. 评价系统（提交和查询）
-6. 统计分析功能
-7. 完善的API文档（Swagger）
-8. 全局异常处理
-9. 数据验证和权限控制
-10. 分页和排序支持
-
-✅ **测试验证**:
-- 所有核心接口已通过基本功能测试
-- 权限控制验证完成
-- 工单状态流转验证完成
-- 评价系统验证完成
-
-## 部署说明
-
-### 数据库配置
-```yaml
-# application.yml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/repair_system
-    username: your_username
-    password: your_password
+# 验证 admin 是否匹配某个密文
+.\mvnw -q -DskipTests test-compile exec:java -Dexec.mainClass=org.trs.UseBCrypt -Dexec.args="admin $2a$10$xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
-编译命令
-```bash
-mvn compile # 如果修改了项目结构，需要执行
+说明: 如果你本地没有配置 exec-maven-plugin，也可以在 IDE 中直接运行 UseBCrypt.main。
 
-mvn clean compile # 清除缓存并编译（会重新下载内容）
+### 密码相关接口（Swagger 可见）
 
-mvn clean compile -e # 如果需要查看详细报错信息，请在末尾添加 `-e` 参数
+- `POST /api/users/me/password`: 当前登录用户修改自己的密码（需要 `oldPassword` 和 `newPassword`）。
+- `POST /api/users/{id}/password/reset`: 管理员重置指定用户密码（仅 `ADMIN` 可调用，需要 `newPassword`）。
+
+## 初始化管理员账号（SQL 示例）
+
+请将 users.password 填写为 BCrypt 密文，而不是明文。
+
+```sql
+USE therepairsystem;
+
+-- 第一步：插入三个基础角色
+INSERT INTO user_role (id, role_name) VALUES
+(1, 'USER'),
+(2, 'ENGINEER'),
+(3, 'ADMIN');
+
+-- 第二步：插入默认管理员用户
+-- password 必须是对明文 admin 的 BCrypt 密文（可用 UseBCrypt 生成）
+INSERT INTO users (id, username, password, phone, real_name) VALUES
+(1, 'admin', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.jqstwCa', '13800000000', '系统管理员');
+
+-- 第三步：绑定 ADMIN 角色
+INSERT INTO user_role_rel (role_id, user_id) VALUES
+(3, 1);
 ```
 
-### 启动命令
+## 开发与运行
+
+### 编译
+
 ```bash
-mvn spring-boot:run
+# 使用当前项目的 Maven Wrapper 进行编译
+.\mvnw compile
+
+# 清除缓存并重新编译
+.\mvnw clean compile
+
+# 需要详细错误信息时
+.\mvnw clean compile -e
+```
+
+### 启动
+
+```bash
+.\mvnw spring-boot:run
 ```
 
 ### 访问地址
-- API文档: http://localhost:8080/swagger-ui/index.html#/
+- API 文档: http://localhost:8080/swagger-ui/index.html#/
 - 应用端点: http://localhost:8080/api/*
 
 ## 总结
 
-本项目成功实现了一个功能完整的维修工单管理系统后端，具有以下优势：
-
-1. **架构清晰**: 采用经典的MVC分层架构，代码结构清晰
-2. **功能完整**: 覆盖了维修工单管理的完整业务流程
-3. **扩展性好**: 模块化设计，易于扩展新功能
-4. **安全性高**: 完善的认证授权机制
-5. **文档完善**: 详细的API文档和代码注释
-
-项目可以作为企业级维修工单管理系统的基础框架，支持进一步的功能扩展和定制化开发。
->>>>>>> 6dc1212 (Revise README for clarity and organization)
+本项目已实现维修工单系统后端的核心能力，具备清晰分层架构、可扩展的权限体系和完整的工单流程，适合作为进一步迭代的基础框架。

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.trs.therepairsystem.entity.User;
 import org.trs.therepairsystem.dto.response.UserDTO;
 import org.trs.therepairsystem.web.converter.UserConverter;
+import org.trs.therepairsystem.dto.request.auth.AdminResetPasswordRequest;
 import org.trs.therepairsystem.dto.request.auth.ChangePasswordRequest;
 import org.trs.therepairsystem.dto.request.user.UserCreateRequest;
 import org.trs.therepairsystem.dto.request.user.UserUpdateRequest;
@@ -30,7 +31,8 @@ public class UserController {
     private UserService userService;
 
     @GetMapping("/{id}")
-    @Operation(summary = "获取用户信息", description = "根据ID获取单个用户的详细信息")
+    @Operation(summary = "获取用户信息", description = "管理员根据ID获取单个用户的详细信息")
+    @PreAuthorize("hasRole('ADMIN')")
     public UserDTO getUser(@PathVariable Long id) {
         User user = userService.getById(id);
         if (user == null) {
@@ -40,7 +42,8 @@ public class UserController {
     }
 
     @GetMapping
-    @Operation(summary = "分页获取用户列表", description = "分页查询所有用户信息")
+    @Operation(summary = "分页获取用户列表", description = "管理员分页查询所有用户信息")
+    @PreAuthorize("hasRole('ADMIN')")
     public Page<UserDTO> listUsers(@RequestParam(defaultValue = "0") int page,
                                    @RequestParam(defaultValue = "10") int size) {
         return UserConverter.toDTOPage(userService.listUsers(page, size));
@@ -67,13 +70,14 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "更新用户信息", description = "更新用户的基本信息（不包含密码）。可更新真实姓名、手机号等信息。")
+    @Operation(summary = "管理员更新用户信息", description = "管理员更新指定用户的基本信息（不包含密码）。")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "更新成功"),
         @ApiResponse(responseCode = "404", description = "用户不存在"),
         @ApiResponse(responseCode = "409", description = "数据冲突 - 用户名或手机号已存在"),
         @ApiResponse(responseCode = "400", description = "请求参数无效")
     })
+    @PreAuthorize("hasRole('ADMIN')")
     public UserDTO updateUser(@PathVariable Long id,
                              @Valid @RequestBody UserUpdateRequest request) {
         // 创建一个新的User对象，只包含需要更新的字段
@@ -82,6 +86,33 @@ public class UserController {
         updateUser.setPhone(request.getPhone());
         
         User updated = userService.updateUser(id, updateUser);
+        return UserConverter.toDTO(updated);
+    }
+
+    @PutMapping("/me")
+    @Operation(summary = "当前用户更新个人信息", description = "当前登录用户更新自己的基础信息（不包含密码）。")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "更新成功"),
+        @ApiResponse(responseCode = "400", description = "请求参数无效"),
+        @ApiResponse(responseCode = "401", description = "用户未登录"),
+        @ApiResponse(responseCode = "404", description = "用户不存在"),
+        @ApiResponse(responseCode = "409", description = "数据冲突 - 手机号已存在")
+    })
+    public UserDTO updateCurrentUser(Authentication authentication,
+                                     @Valid @RequestBody UserUpdateRequest request) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("用户未登录");
+        }
+        User currentUser = userService.findByUsername(authentication.getName());
+        if (currentUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        User updateUser = new User();
+        updateUser.setRealName(request.getRealName());
+        updateUser.setPhone(request.getPhone());
+
+        User updated = userService.updateUser(currentUser.getId(), updateUser);
         return UserConverter.toDTO(updated);
     }
 
@@ -113,17 +144,40 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/change-password")
-    @Operation(summary = "修改密码", description = "用户修改自己的密码。需要提供正确的旧密码和新密码。新密码长度建议8位以上。")
+    @PostMapping("/me/password")
+    @Operation(summary = "当前用户修改密码", description = "当前登录用户修改自己的密码。需要提供正确的旧密码和新密码。")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "密码修改成功"),
-        @ApiResponse(responseCode = "400", description = "旧密码错误"),
+        @ApiResponse(responseCode = "400", description = "参数错误"),
+        @ApiResponse(responseCode = "401", description = "旧密码错误或未登录"),
         @ApiResponse(responseCode = "404", description = "用户不存在"),
         @ApiResponse(responseCode = "500", description = "系统内部错误")
     })
-    public ResponseEntity<Void> changePassword(@PathVariable Long id, 
+    public ResponseEntity<Void> changePassword(Authentication authentication,
                                                @Valid @RequestBody ChangePasswordRequest request) {
-        userService.changePassword(id, request.getOldPassword(), request.getNewPassword());
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("用户未登录");
+        }
+        User currentUser = userService.findByUsername(authentication.getName());
+        if (currentUser == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        userService.changePassword(currentUser.getId(), request.getOldPassword(), request.getNewPassword());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/password/reset")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "管理员重置用户密码", description = "管理员直接重置指定用户密码，不校验旧密码。")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "密码重置成功"),
+        @ApiResponse(responseCode = "400", description = "参数错误"),
+        @ApiResponse(responseCode = "403", description = "权限不足"),
+        @ApiResponse(responseCode = "404", description = "用户不存在")
+    })
+    public ResponseEntity<Void> adminResetPassword(@PathVariable Long id,
+                                                   @Valid @RequestBody AdminResetPasswordRequest request) {
+        userService.adminResetPassword(id, request.getNewPassword());
         return ResponseEntity.ok().build();
     }
 }

@@ -25,6 +25,8 @@ public interface UserService {
     List<UserRole> getUserRoles(Long userId);
 
     void changePassword(Long userId, String oldPassword, String newPassword);
+
+    void adminResetPassword(Long userId, String newPassword);
     
     User findByUsername(String username);
 

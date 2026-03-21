@@ -420,9 +420,20 @@ public class RepairOrderServiceImpl implements RepairOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public RepairOrderResponse getOrderById(Long orderId) {
+    public RepairOrderResponse getOrderById(Long requesterId, boolean isAdmin, Long orderId) {
         RepairOrder order = repairOrderRepository.findById(orderId)
             .orElseThrow(() -> new BusinessException("工单不存在"));
+
+        if (!isAdmin) {
+            boolean isSubmitter = order.getSubmitUser() != null &&
+                    requesterId.equals(order.getSubmitUser().getId());
+            boolean isAssignedEngineer = order.getEngineer() != null &&
+                    requesterId.equals(order.getEngineer().getId());
+
+            if (!isSubmitter && !isAssignedEngineer) {
+                throw new BusinessException("没有权限查看该工单");
+            }
+        }
         return convertToResponse(order);
     }
 

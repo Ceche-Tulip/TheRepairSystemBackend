@@ -136,10 +136,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void changePassword(Long userId, String oldPassword, String newPassword) {
-        User user = getById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
         if (!matches(oldPassword, user.getPassword())) {
             throw new RuntimeException("旧密码错误");
         }
+        user.setPassword(encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Override
+    public void adminResetPassword(Long userId, String newPassword) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException("用户不存在"));
         user.setPassword(encode(newPassword));
         userRepository.save(user);
     }
