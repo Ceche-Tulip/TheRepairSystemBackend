@@ -52,28 +52,24 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
                                             Pageable pageable);
 
     // 工程师在指定故障类型范围内的工单
-    @Query("""
-        SELECT ro FROM RepairOrder ro 
-        WHERE ro.engineer.id = :engineerId 
-        AND ro.faultType.id IN (
-            SELECT efr.faultType.id FROM EngineerFaultRel efr 
-            WHERE efr.engineer.id = :engineerId
-        )
-        ORDER BY ro.createTime DESC
-        """)
+    @Query("SELECT ro FROM RepairOrder ro " +
+           "WHERE ro.engineer.id = :engineerId " +
+           "AND ro.faultType.id IN (" +
+           "    SELECT efr.faultType.id FROM EngineerFaultRel efr " +
+           "    WHERE efr.engineer.id = :engineerId" +
+           ") " +
+           "ORDER BY ro.createTime DESC")
     Page<RepairOrder> findByEngineerInAssignedFaultTypes(@Param("engineerId") Long engineerId, 
                                                         Pageable pageable);
 
     // 工程师在指定区域范围内的工单
-    @Query("""
-        SELECT ro FROM RepairOrder ro 
-        WHERE ro.engineer.id = :engineerId 
-        AND ro.floor.id IN (
-            SELECT ear.floor.id FROM EngineerAreaRel ear 
-            WHERE ear.engineer.id = :engineerId
-        )
-        ORDER BY ro.createTime DESC
-        """)
+    @Query("SELECT ro FROM RepairOrder ro " +
+           "WHERE ro.engineer.id = :engineerId " +
+           "AND ro.floor.id IN (" +
+           "    SELECT ear.floor.id FROM EngineerAreaRel ear " +
+           "    WHERE ear.engineer.id = :engineerId" +
+           ") " +
+           "ORDER BY ro.createTime DESC")
     Page<RepairOrder> findByEngineerInAssignedAreas(@Param("engineerId") Long engineerId, 
                                                    Pageable pageable);
 
@@ -114,33 +110,29 @@ public interface RepairOrderRepository extends JpaRepository<RepairOrder, Long> 
     long countTodayOrdersByStatus(@Param("status") RepairOrderStatus status);
 
     // 可分配的工程师查询辅助（根据故障类型和区域）
-    @Query("""
-        SELECT DISTINCT u.id FROM User u 
-        INNER JOIN UserRoleRel urr ON u.id = urr.user.id
-        INNER JOIN UserRole ur ON urr.role.id = ur.id
-        WHERE ur.roleName = 'ENGINEER'
-        AND u.id IN (
-            SELECT efr.engineer.id FROM EngineerFaultRel efr 
-            WHERE efr.faultType.id = :faultTypeId
-        )
-        AND u.id IN (
-            SELECT ear.engineer.id FROM EngineerAreaRel ear 
-            WHERE ear.floor.id = :floorId
-        )
-        """)
+    @Query("SELECT DISTINCT u.id FROM User u " +
+           "INNER JOIN UserRoleRel urr ON u.id = urr.user.id " +
+           "INNER JOIN UserRole ur ON urr.role.id = ur.id " +
+           "WHERE ur.roleName = 'ENGINEER' " +
+           "AND u.id IN (" +
+           "    SELECT efr.engineer.id FROM EngineerFaultRel efr " +
+           "    WHERE efr.faultType.id = :faultTypeId" +
+           ") " +
+           "AND u.id IN (" +
+           "    SELECT ear.engineer.id FROM EngineerAreaRel ear " +
+           "    WHERE ear.floor.id = :floorId" +
+           ")")
     List<Long> findAvailableEngineerIds(@Param("faultTypeId") Long faultTypeId, 
                                        @Param("floorId") Long floorId);
 
     // 复杂条件查询
-    @Query("""
-        SELECT ro FROM RepairOrder ro 
-        WHERE (:userId IS NULL OR ro.submitUser.id = :userId)
-        AND (:engineerId IS NULL OR ro.engineer.id = :engineerId)
-        AND (:status IS NULL OR ro.status = :status)
-        AND (:buildingId IS NULL OR ro.building.id = :buildingId)
-        AND (:faultTypeId IS NULL OR ro.faultType.id = :faultTypeId)
-        ORDER BY ro.createTime DESC
-        """)
+    @Query("SELECT ro FROM RepairOrder ro " +
+           "WHERE (:userId IS NULL OR ro.submitUser.id = :userId) " +
+           "AND (:engineerId IS NULL OR ro.engineer.id = :engineerId) " +
+           "AND (:status IS NULL OR ro.status = :status) " +
+           "AND (:buildingId IS NULL OR ro.building.id = :buildingId) " +
+           "AND (:faultTypeId IS NULL OR ro.faultType.id = :faultTypeId) " +
+           "ORDER BY ro.createTime DESC")
     Page<RepairOrder> findByConditions(@Param("userId") Long userId,
                                       @Param("engineerId") Long engineerId,
                                       @Param("status") RepairOrderStatus status,

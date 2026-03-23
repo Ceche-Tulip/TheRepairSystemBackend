@@ -9,7 +9,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/therepairsystem?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: password
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   # JPA/Hibernate 配置
@@ -29,3 +29,9 @@ jwt:
 logging:
   level:
     org.springframework.security: DEBUG
+
+# SiliconFlow AI 配置
+siliconflow:
+  api-url: "https://api.siliconflow.cn/v1/chat/completions"  # SiliconFlow API URL
+  api-key: "sk-eydevvztluhfgqyyhcrdephaxkslsxpjlwjuvdyiwvpajhwj"  # 实际API密钥
+  model: "deepseek-ai/DeepSeek-V3.2"  # 默认模型，可更改为其他支持的模型，如 "meta-llama/Meta-Llama-3.1-8B-Instruct"
