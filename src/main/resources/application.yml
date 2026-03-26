@@ -3,14 +3,7 @@ spring:
   application:
     name: TheRepairSystem  # 应用名称
   profiles:
-    active:
-
-  # 数据源配置
-  datasource:
-    url: jdbc:mysql://localhost:3306/therepairsystem?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: password
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    active: local
 
   # JPA/Hibernate 配置
   jpa:
@@ -30,8 +23,10 @@ logging:
   level:
     org.springframework.security: DEBUG
 
-# SiliconFlow AI 配置
-siliconflow:
-  api-url: "https://api.siliconflow.cn/v1/chat/completions"  # SiliconFlow API URL
-  api-key: "sk-eydevvztluhfgqyyhcrdephaxkslsxpjlwjuvdyiwvpajhwj"  # 实际API密钥
-  model: "deepseek-ai/DeepSeek-V3.2"  # 默认模型，可更改为其他支持的模型，如 "meta-llama/Meta-Llama-3.1-8B-Instruct"
+# 工单附件上传通用配置
+file:
+  upload:
+    # 单文件最大大小（字节），默认 10MB
+    max-file-size-bytes: 10485760
+    # 允许上传的图片内容类型
+    allowed-content-types: image/jpeg,image/png,image/webp

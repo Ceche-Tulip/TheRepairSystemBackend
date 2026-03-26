@@ -160,6 +160,26 @@ src/
 - `POST /api/users/me/password`: 当前登录用户修改自己的密码（需要 `oldPassword` 和 `newPassword`）。
 - `POST /api/users/{id}/password/reset`: 管理员重置指定用户密码（仅 `ADMIN` 可调用，需要 `newPassword`）。
 
+### AI 接口（Swagger 已统一）
+
+- `POST /api/ai/ask`: AI 提问接口，文档注解风格已与其他控制器统一（Tag/Operation/ApiResponses）。
+
+### 工单附件接口（新增）
+
+- `POST /api/repair-orders/{orderId}/attachments`: 上传附件（multipart/form-data，字段：`file`、`attachmentType`）。
+- `GET /api/repair-orders/{orderId}/attachments`: 获取工单附件列表。
+- `GET /api/repair-orders/{orderId}/attachments/{attachmentId}/download`: 下载附件。
+- `DELETE /api/repair-orders/{orderId}/attachments/{attachmentId}`: 删除附件。
+
+权限规则：
+- 上传/查询/下载：工单提交人、当前分配工程师、管理员。
+- 删除：附件上传者本人或管理员。
+
+约束规则：
+- 一个工单可有多个附件，也可没有附件。
+- 仅支持 `image/jpeg`、`image/png`、`image/webp`。
+- 默认单文件大小限制为 10MB。
+
 ## 初始化管理员账号（SQL 示例）
 
 请将 users.password 填写为 BCrypt 密文，而不是明文。
@@ -184,6 +204,76 @@ INSERT INTO user_role_rel (role_id, user_id) VALUES
 ```
 
 ## 开发与运行
+
+### MinIO 部署与配置（Docker）
+
+以下流程用于第二轮附件存储接入（本地存储与 MinIO 可切换）：
+
+#### 1) 使用 Docker Compose 启动 MinIO
+
+项目根目录已提供 `docker-compose.yml`，可直接执行：
+
+```bash
+docker compose up -d
+```
+
+查看运行状态：
+
+```bash
+docker compose ps
+docker logs --tail 50 repair-minio
+```
+
+停止与清理（保留数据卷目录 `minio_data`）：
+
+```bash
+docker compose down
+```
+
+说明：
+- MinIO 要求密码至少 8 位，`root/root` 无法启动；遂使用 `root/root12345`。
+- `minio_data` 映射在项目目录下，仅是本地运行数据，不会进入 Git（已在 `.gitignore` 忽略）。
+- 容器运行在 Docker Desktop 的 Linux VM 中，通过端口映射暴露到你本机 `localhost`。
+
+启动后访问：
+- MinIO API: `http://localhost:9000`
+- MinIO Console: `http://localhost:9001`（账号/密码：`root/root12345`）
+
+#### 2) 准备 bucket
+
+项目默认 bucket 为 `repair-attachments`，并支持自动创建（`auto-create-bucket: true`）。
+
+如果你希望手动创建，也可以在 MinIO Console 中新建同名 bucket。
+
+#### 3) 在本地配置中切换为 MinIO
+
+先从模板复制：
+
+```bash
+Copy-Item src/main/resources/application-local.yml.example src/main/resources/application-local.yml
+```
+
+然后编辑 `src/main/resources/application-local.yml`：
+
+```yaml
+file:
+  upload:
+    storage-provider: MINIO
+    base-path: uploads
+    max-file-size-bytes: 10485760
+    allowed-content-types: image/jpeg,image/png,image/webp
+    minio:
+      enabled: true
+      endpoint: http://localhost:9000
+      access-key: root
+      secret-key: root12345
+      bucket: repair-attachments
+      auto-create-bucket: true
+```
+
+说明：
+- 当 `storage-provider: LOCAL` 时，继续使用本地文件系统。
+- 当 `storage-provider: MINIO` 时，上传走 MinIO；历史附件会按数据库中记录的 `storageProvider` 自动路由读取。
 
 ### 编译
 

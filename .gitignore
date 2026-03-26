@@ -33,4 +33,12 @@ build/
 .vscode/
 
 ### docs ###
-/docs/
+docs/
+
+### Attachments ###
+minio_data/
+uploads/
+
+### local profile ###
+src/main/resources/application-local.yml
+!src/main/resources/application-local.yml.example
