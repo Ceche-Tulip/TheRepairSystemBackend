@@ -17,6 +17,8 @@ import org.trs.therepairsystem.repository.RepairOrderRepository;
 import org.trs.therepairsystem.repository.UserRepository;
 import org.trs.therepairsystem.service.storage.AttachmentStorageService;
 
+import org.trs.therepairsystem.common.enums.RepairOrderStatus;
+
 import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
@@ -55,6 +57,15 @@ public class RepairOrderAttachmentServiceImpl implements RepairOrderAttachmentSe
                                                           MultipartFile file,
                                                           AttachmentType attachmentType) {
         RepairOrder order = assertCanAccessOrder(requesterId, isAdmin, orderId);
+        
+        // 校验状态与类型权限（在文件验证前进行）
+        String userRole = getUserRoleForOrder(requesterId, order, isAdmin);
+        if (!canUploadByStatusAndType(userRole, order.getStatus(), attachmentType)) {
+            throw new BusinessException("STATE_VIOLATION",
+                String.format("用户在工单状态 %s 下禁止上传 %s 类型附件", 
+                    order.getStatus(), attachmentType));
+        }
+        
         User uploader = userRepository.findById(requesterId)
                 .orElseThrow(() -> new BusinessException("上传用户不存在"));
 
@@ -124,10 +135,18 @@ public class RepairOrderAttachmentServiceImpl implements RepairOrderAttachmentSe
         RepairOrderAttachment attachment = attachmentRepository.findByIdAndOrderId(attachmentId, orderId)
                 .orElseThrow(() -> new BusinessException("附件不存在"));
 
+        RepairOrder order = attachment.getOrder();
         assertCanAccessOrder(requesterId, isAdmin, orderId);
 
         if (!isAdmin && !attachment.getUploadedBy().getId().equals(requesterId)) {
             throw new BusinessException("没有权限删除该附件");
+        }
+
+        // 校验状态权限（在删除前进行）
+        String userRole = getUserRoleForOrder(requesterId, order, isAdmin);
+        if (!canDeleteByStatus(userRole, order.getStatus())) {
+            throw new BusinessException("STATE_VIOLATION",
+                String.format("用户在工单状态 %s 下禁止删除附件", order.getStatus()));
         }
 
         resolveStorageService(attachment.getStorageProvider()).delete(attachment.getObjectKey());
@@ -206,4 +225,94 @@ public class RepairOrderAttachmentServiceImpl implements RepairOrderAttachmentSe
                         attachment.getId()))
                 .build();
     }
+
+    /**
+     * 根据用户与工单关系确定用户角色
+     *
+     * @param requesterId 请求用户ID
+     * @param order 工单对象
+     * @param isAdmin 是否管理员
+     * @return 用户对本工单的角色：ADMIN / USER / ENGINEER
+     */
+    private String getUserRoleForOrder(Long requesterId, RepairOrder order, boolean isAdmin) {
+        if (isAdmin) {
+            return "ADMIN";
+        }
+
+        if (order.getSubmitUser() != null && requesterId.equals(order.getSubmitUser().getId())) {
+            return "USER";
+        }
+
+        if (order.getEngineer() != null && requesterId.equals(order.getEngineer().getId())) {
+            return "ENGINEER";
+        }
+
+        // 不应能到达此处，因为 assertCanAccessOrder 已校验
+        return "UNKNOWN";
+    }
+
+    /**
+     * 校验指定用户是否可在当前工单状态下上传特定类型的附件
+     *
+     * @param roleType 用户角色（ADMIN/USER/ENGINEER）
+     * @param orderStatus 工单当前状态
+     * @param attachmentType 待上传的附件类型
+     * @return true 允许，false 拒绝
+     */
+    private boolean canUploadByStatusAndType(String roleType, RepairOrderStatus orderStatus, AttachmentType attachmentType) {
+        // 管理员全权限
+        if ("ADMIN".equals(roleType)) {
+            return true;
+        }
+
+        // 用户规则：DRAFT ~ PENDING 可上传 PROBLEM_PHOTO 和 BEFORE_AFTER
+        if ("USER".equals(roleType)) {
+            if (attachmentType == AttachmentType.REPAIR_PROOF) {
+                return false; // 用户不能上传维修证据
+            }
+            // 用户在 DRAFT/SUBMITTED/PENDING 阶段可上传问题描述和对比图
+            return orderStatus.getCode() <= RepairOrderStatus.PENDING.getCode();
+        }
+
+        // 工程师规则：IN_PROGRESS ~ COMPLETED 可上传 REPAIR_PROOF 和 BEFORE_AFTER
+        if ("ENGINEER".equals(roleType)) {
+            if (attachmentType == AttachmentType.PROBLEM_PHOTO) {
+                return false; // 工程师不能上传问题照片
+            }
+            // 工程师在 IN_PROGRESS/COMPLETED 阶段可上传维修证据和对比图
+            return orderStatus.getCode() >= RepairOrderStatus.IN_PROGRESS.getCode()
+                    && orderStatus.getCode() <= RepairOrderStatus.COMPLETED.getCode();
+        }
+
+        return false;
+    }
+
+    /**
+     * 校验指定用户是否可在当前工单状态下删除附件
+     * 前置条件：已验证用户是附件上传者或管理员
+     *
+     * @param roleType 用户角色（ADMIN/USER/ENGINEER）
+     * @param orderStatus 工单当前状态
+     * @return true 允许，false 拒绝
+     */
+    private boolean canDeleteByStatus(String roleType, RepairOrderStatus orderStatus) {
+        // 管理员全权限
+        if ("ADMIN".equals(roleType)) {
+            return true;
+        }
+
+        // 用户只能在接单前（DRAFT ~ PENDING）删除自己的附件
+        if ("USER".equals(roleType)) {
+            return orderStatus.getCode() <= RepairOrderStatus.PENDING.getCode();
+        }
+
+        // 工程师只能在接单后的工作阶段（IN_PROGRESS ~ COMPLETED）删除自己的附件
+        if ("ENGINEER".equals(roleType)) {
+            return orderStatus.getCode() >= RepairOrderStatus.IN_PROGRESS.getCode()
+                    && orderStatus.getCode() <= RepairOrderStatus.COMPLETED.getCode();
+        }
+
+        return false;
+    }
 }
+
