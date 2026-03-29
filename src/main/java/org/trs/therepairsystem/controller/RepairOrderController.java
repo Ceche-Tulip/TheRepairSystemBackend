@@ -205,7 +205,15 @@ public class RepairOrderController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @Operation(summary = "查询工单详情", description = "根据工单ID查询详细信息")
+        @Operation(
+            summary = "查询工单详情",
+            description = "根据工单ID查询详细信息。权限范围：管理员可查看任意工单；普通用户仅可查看自己提交的工单；工程师仅可查看分配给自己的工单。联系方式字段可能根据权限返回脱敏值。"
+        )
+        @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "查询成功"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "无权限查看该工单"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "工单不存在")
+        })
     @GetMapping("/{orderId}")
     @PreAuthorize("hasRole('USER') or hasRole('ENGINEER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<RepairOrderResponse>> getOrderById(

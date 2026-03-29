@@ -10,6 +10,7 @@ import org.trs.therepairsystem.dto.request.*;
 import org.trs.therepairsystem.dto.response.RepairOrderResponse;
 import org.trs.therepairsystem.dto.response.RepairOrderStatsResponse;
 import org.trs.therepairsystem.dto.response.EngineerResponse;
+import org.trs.therepairsystem.common.util.ContactVisibilityPolicy;
 import org.trs.therepairsystem.entity.*;
 import org.trs.therepairsystem.common.enums.RepairOrderStatus;
 import org.trs.therepairsystem.repository.*;
@@ -80,7 +81,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             log.warn("工单 {} 自动分配失败: {}, 等待管理员手动分配", savedOrder.getId(), e.getMessage());
         }
         
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, userId, false);
     }
 
     @Override
@@ -120,7 +121,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder savedOrder = repairOrderRepository.save(order);
         
         log.info("用户 {} 保存了维修工单草稿 {}", userId, savedOrder.getId());
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, userId, false);
     }
 
     @Override
@@ -152,7 +153,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         }
         
         log.info("用户 {} 提交了草稿工单 {}", userId, orderId);
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, userId, false);
     }
 
     @Override
@@ -197,7 +198,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder savedOrder = repairOrderRepository.save(order);
         
         log.info("用户 {} 修改了草稿工单 {}", userId, orderId);
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, userId, false);
     }
 
     @Override
@@ -239,7 +240,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder savedOrder = repairOrderRepository.save(order);
 
         log.info("管理员 {} 将工单 {} 分配给工程师 {}", adminId, orderId, request.getEngineerId());
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, adminId, true);
     }
 
     @Override
@@ -284,7 +285,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         } else {
             log.info("系统自动将工单 {} 分配给工程师 {}", orderId, selectedEngineerId);
         }
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, adminId, adminId != null);
     }
 
     @Override
@@ -310,7 +311,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder savedOrder = repairOrderRepository.save(order);
 
         log.info("工程师 {} 接受了工单 {}", engineerId, orderId);
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, engineerId, false);
     }
 
     @Override
@@ -336,7 +337,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder savedOrder = repairOrderRepository.save(order);
 
         log.info("工程师 {} 完成了工单 {}", engineerId, orderId);
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, engineerId, false);
     }
 
     @Override
@@ -370,7 +371,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         repairRatingRepository.save(rating);
 
         log.info("用户 {} 关闭了工单 {} 并提交了评价", userId, orderId);
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, userId, false);
     }
 
     @Override
@@ -394,7 +395,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder savedOrder = repairOrderRepository.save(order);
 
         log.info("用户 {} 取消了工单 {}", userId, orderId);
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, userId, false);
     }
 
     @Override
@@ -415,7 +416,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder savedOrder = repairOrderRepository.save(order);
 
         log.info("管理员 {} 强制取消了工单 {}", adminId, orderId);
-        return convertToResponse(savedOrder);
+        return convertToResponse(savedOrder, adminId, true);
     }
 
     @Override
@@ -434,7 +435,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
                 throw new BusinessException("没有权限查看该工单");
             }
         }
-        return convertToResponse(order);
+        return convertToResponse(order, requesterId, isAdmin);
     }
 
     @Override
@@ -444,7 +445,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             repairOrderRepository.findByUserIdAndStatus(userId, status, pageable) :
             repairOrderRepository.findBySubmitUserIdOrderByCreateTimeDesc(userId, pageable);
         
-        return orders.map(this::convertToResponse);
+        return orders.map(order -> convertToResponse(order, userId, false));
     }
 
     @Override
@@ -454,7 +455,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             repairOrderRepository.findByEngineerIdAndStatus(engineerId, status, pageable) :
             repairOrderRepository.findByEngineerIdOrderByCreateTimeDesc(engineerId, pageable);
         
-        return orders.map(this::convertToResponse);
+        return orders.map(order -> convertToResponse(order, engineerId, false));
     }
 
     @Override
@@ -467,7 +468,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             request.getBuildingId(),
             request.getFaultTypeId(),
             pageable
-        ).map(this::convertToResponse);
+        ).map(order -> convertToResponse(order, request.getUserId(), true));
     }
 
     @Override
@@ -476,14 +477,14 @@ public class RepairOrderServiceImpl implements RepairOrderService {
                                                       Long buildingId, Long faultTypeId, Pageable pageable) {
         return repairOrderRepository.findByConditions(
             userId, engineerId, status, buildingId, faultTypeId, pageable
-        ).map(this::convertToResponse);
+        ).map(order -> convertToResponse(order, userId, true));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<RepairOrderResponse> getUnassignedOrders(Pageable pageable) {
         return repairOrderRepository.findUnassignedPendingOrders(pageable)
-            .map(this::convertToResponse);
+            .map(order -> convertToResponse(order, null, true));
     }
 
     @Override
@@ -579,7 +580,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         }
     }
 
-    private RepairOrderResponse convertToResponse(RepairOrder order) {
+        private RepairOrderResponse convertToResponse(RepairOrder order, Long viewerUserId, boolean viewerIsAdmin) {
         return RepairOrderResponse.builder()
             .id(order.getId())
             .status(order.getStatus())
@@ -590,6 +591,8 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             .finishTime(order.getFinishTime())
             .submitUserId(order.getSubmitUser().getId())
             .submitUserName(order.getSubmitUser().getUsername())
+            .submitUserPhone(ContactVisibilityPolicy.resolveOrderPhone(
+                order.getSubmitUser(), order, viewerUserId, viewerIsAdmin))
             .buildingId(order.getBuilding().getId())
             .buildingName(order.getBuilding().getName())
             .floorId(order.getFloor().getId())
@@ -600,6 +603,9 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             .adminName(order.getAdmin() != null ? order.getAdmin().getUsername() : null)
             .engineerId(order.getEngineer() != null ? order.getEngineer().getId() : null)
             .engineerName(order.getEngineer() != null ? order.getEngineer().getUsername() : null)
+            .engineerPhone(order.getEngineer() != null
+                ? ContactVisibilityPolicy.resolveOrderPhone(order.getEngineer(), order, viewerUserId, viewerIsAdmin)
+                : null)
             .canAssignEngineer(order.canAssignEngineer())
             .canAccept(order.canAccept())
             .canComplete(order.canComplete())

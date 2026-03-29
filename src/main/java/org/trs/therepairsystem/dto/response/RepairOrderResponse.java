@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.trs.therepairsystem.common.enums.RepairOrderStatus;
 
 import java.time.LocalDateTime;
@@ -12,6 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "维修工单响应对象")
 public class RepairOrderResponse {
 
     private Long id;
@@ -25,6 +27,8 @@ public class RepairOrderResponse {
     // 提交用户信息
     private Long submitUserId;
     private String submitUserName;
+    @Schema(description = "报修人联系电话。默认可能为脱敏值；管理员、本人、同工单协作者可见明文", example = "138****8000")
+    private String submitUserPhone;
 
     // 建筑和楼层信息
     private Long buildingId;
@@ -43,6 +47,8 @@ public class RepairOrderResponse {
     // 工程师信息（可为空）
     private Long engineerId;
     private String engineerName;
+    @Schema(description = "工程师联系电话。默认可能为脱敏值；管理员、本人、同工单协作者可见明文", example = "139****9000")
+    private String engineerPhone;
 
     // 业务状态标识
     private Boolean canAssignEngineer;

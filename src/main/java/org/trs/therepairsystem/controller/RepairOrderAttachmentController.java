@@ -19,6 +19,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.trs.therepairsystem.common.enums.AttachmentType;
+import org.trs.therepairsystem.common.util.ContentDispositionUtils;
 import org.trs.therepairsystem.dto.response.RepairOrderAttachmentResponse;
 import org.trs.therepairsystem.security.CustomUserDetails;
 import org.trs.therepairsystem.service.RepairOrderAttachmentService;
@@ -97,7 +98,7 @@ public class RepairOrderAttachmentController {
         return ResponseEntity.ok()
                 .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + info.attachment().getOriginalFileName() + "\"")
+                        ContentDispositionUtils.buildAttachmentHeaderValue(info.attachment().getOriginalFileName()))
                 .contentLength(info.attachment().getFileSize())
                 .body(resource);
     }
