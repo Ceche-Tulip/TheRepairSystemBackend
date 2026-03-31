@@ -33,6 +33,14 @@ public class EngineerAssignController {
         return engineerAssignService.getAllEngineers();
     }
 
+    @GetMapping("/{engineerId}")
+    @Operation(summary = "获取工程师详细信息", description = "根据工程师ID获取工程师的详细信息（realName、phone等），所有登录用户可访问")
+    @PreAuthorize("hasRole('USER') or hasRole('ENGINEER') or hasRole('ADMIN')")
+    public UserDTO getEngineerById(
+            @Parameter(description = "工程师用户ID", example = "2") @PathVariable Long engineerId) {
+        return engineerAssignService.getEngineerById(engineerId);
+    }
+
     // ========== 区域分配管理 ==========
 
     @PostMapping("/areas/assign")

@@ -54,6 +54,19 @@ public class EngineerAssignServiceImpl implements EngineerAssignService {
                 .collect(Collectors.toList());
     }
     
+    @Override
+    @Transactional(readOnly = true)
+    public UserDTO getEngineerById(Long engineerId) {
+        // 查询用户是否存在
+        User engineer = userRepository.findById(engineerId)
+                .orElseThrow(() -> new IllegalArgumentException("工程师不存在: " + engineerId));
+        
+        // 验证用户是否具有工程师角色
+        validateEngineerRole(engineerId);
+        
+        return UserConverter.toDTO(engineer);
+    }
+    
     // ========== 区域分配管理 ==========
     
     @Override

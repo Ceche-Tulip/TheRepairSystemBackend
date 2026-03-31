@@ -13,6 +13,11 @@ public interface EngineerAssignService {
      */
     List<UserDTO> getAllEngineers();
     
+    /**
+     * 根据ID获取单个工程师的信息（公开接口）
+     */
+    UserDTO getEngineerById(Long engineerId);
+    
     // ========== 区域分配管理 ==========
     
     /**

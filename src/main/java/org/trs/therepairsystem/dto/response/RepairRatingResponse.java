@@ -17,6 +17,7 @@ public class RepairRatingResponse {
     private Long orderId;
     private Long engineerId;
     private String engineerName;
+    private String engineerPhone;
     private Long userId;
     private String userName;
     private Integer rating;

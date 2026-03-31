@@ -102,6 +102,7 @@ public class RepairRatingServiceImpl implements RepairRatingService {
             .orderId(rating.getOrder().getId())
             .engineerId(rating.getOrder().getEngineer().getId())
             .engineerName(rating.getOrder().getEngineer().getRealName())
+            .engineerPhone(rating.getOrder().getEngineer().getPhone())
             .userId(rating.getOrder().getSubmitUser().getId())
             .userName(rating.getOrder().getSubmitUser().getRealName())
             .rating(rating.getRating())
