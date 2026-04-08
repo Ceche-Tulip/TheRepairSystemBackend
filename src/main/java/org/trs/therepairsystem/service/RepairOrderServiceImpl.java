@@ -590,7 +590,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             .acceptTime(order.getAcceptTime())
             .finishTime(order.getFinishTime())
             .submitUserId(order.getSubmitUser().getId())
-            .submitUserName(order.getSubmitUser().getUsername())
+            .submitUserName(order.getSubmitUser().getRealName())
             .submitUserPhone(ContactVisibilityPolicy.resolveOrderPhone(
                 order.getSubmitUser(), order, viewerUserId, viewerIsAdmin))
             .buildingId(order.getBuilding().getId())
@@ -600,9 +600,9 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             .faultTypeId(order.getFaultType().getId())
             .faultTypeName(order.getFaultType().getName())
             .adminId(order.getAdmin() != null ? order.getAdmin().getId() : null)
-            .adminName(order.getAdmin() != null ? order.getAdmin().getUsername() : null)
+            .adminName(order.getAdmin() != null ? order.getAdmin().getRealName() : null)
             .engineerId(order.getEngineer() != null ? order.getEngineer().getId() : null)
-            .engineerName(order.getEngineer() != null ? order.getEngineer().getUsername() : null)
+            .engineerName(order.getEngineer() != null ? order.getEngineer().getRealName() : null)
             .engineerPhone(order.getEngineer() != null
                 ? ContactVisibilityPolicy.resolveOrderPhone(order.getEngineer(), order, viewerUserId, viewerIsAdmin)
                 : null)
