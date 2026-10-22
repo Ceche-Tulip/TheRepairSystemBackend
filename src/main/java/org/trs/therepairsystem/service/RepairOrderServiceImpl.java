@@ -211,7 +211,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         RepairOrder order = repairOrderRepository.findById(orderId)
             .orElseThrow(() -> new BusinessException("工单不存在"));
 
-        // 验证工单状态
+        // 验证工单状态（只有「已提交、尚未指派工程师」的工单可以手动分配）
         if (!order.canAssignEngineer()) {
             throw new BusinessException("当前状态不允许分配工程师");
         }
@@ -220,17 +220,18 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         User engineer = userRepository.findById(request.getEngineerId())
             .orElseThrow(() -> new BusinessException("工程师不存在"));
 
-        // 验证工程师资质（可以处理该故障类型且负责该区域）
+        // 验证工程师资质（是否具备该故障类型资质、是否负责该区域）
+        // 注意：自动分配以这两项作为筛选条件；手动分配是「自动分配无匹配结果」时由管理员协调的兜底手段，
+        // 若此处直接抛异常，则当工单的故障类型与区域分属两名工程师时，任何一名工程师都指派失败，
+        // 管理员将无路可走。因此这里只记录告警，实际指派以管理员的决定为准。
         boolean canHandleFaultType = engineerFaultRelRepository
             .existsByEngineerIdAndFaultTypeId(engineer.getId(), order.getFaultType().getId());
         boolean canHandleArea = engineerAreaRelRepository
             .existsByEngineerIdAndFloorId(engineer.getId(), order.getFloor().getId());
 
-        if (!canHandleFaultType) {
-            throw new BusinessException("工程师不具备处理该故障类型的资质");
-        }
-        if (!canHandleArea) {
-            throw new BusinessException("工程师不负责该区域");
+        if (!canHandleFaultType || !canHandleArea) {
+            log.warn("管理员 {} 手动指派工程师 {}（{}）处理工单 {}，资质不完全匹配（故障类型匹配={}，区域匹配={}），按管理员协调放行",
+                adminId, engineer.getId(), engineer.getRealName(), orderId, canHandleFaultType, canHandleArea);
         }
 
         // 分配工程师
@@ -504,6 +505,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
         return new RepairOrderStatsResponse(
             repairOrderRepository.count(),
             repairOrderRepository.countByStatus(RepairOrderStatus.DRAFT),
+            repairOrderRepository.countByStatus(RepairOrderStatus.SUBMITTED),
             repairOrderRepository.countByStatus(RepairOrderStatus.PENDING),
             repairOrderRepository.countByStatus(RepairOrderStatus.IN_PROGRESS),
             repairOrderRepository.countByStatus(RepairOrderStatus.COMPLETED),
@@ -521,6 +523,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             (long) repairOrderRepository.findBySubmitUserIdOrderByCreateTimeDesc(userId, 
                 org.springframework.data.domain.PageRequest.of(0, 1)).getTotalElements(),
             repairOrderRepository.countByUserIdAndStatus(userId, RepairOrderStatus.DRAFT),
+            repairOrderRepository.countByUserIdAndStatus(userId, RepairOrderStatus.SUBMITTED),
             repairOrderRepository.countByUserIdAndStatus(userId, RepairOrderStatus.PENDING),
             repairOrderRepository.countByUserIdAndStatus(userId, RepairOrderStatus.IN_PROGRESS),
             repairOrderRepository.countByUserIdAndStatus(userId, RepairOrderStatus.COMPLETED),
@@ -537,6 +540,7 @@ public class RepairOrderServiceImpl implements RepairOrderService {
             (long) repairOrderRepository.findByEngineerIdOrderByCreateTimeDesc(engineerId, 
                 org.springframework.data.domain.PageRequest.of(0, 1)).getTotalElements(),
             repairOrderRepository.countByEngineerIdAndStatus(engineerId, RepairOrderStatus.DRAFT),
+            repairOrderRepository.countByEngineerIdAndStatus(engineerId, RepairOrderStatus.SUBMITTED),
             repairOrderRepository.countByEngineerIdAndStatus(engineerId, RepairOrderStatus.PENDING),
             repairOrderRepository.countByEngineerIdAndStatus(engineerId, RepairOrderStatus.IN_PROGRESS),
             repairOrderRepository.countByEngineerIdAndStatus(engineerId, RepairOrderStatus.COMPLETED),
