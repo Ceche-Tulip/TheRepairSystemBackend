@@ -7,7 +7,9 @@
 spring:
   datasource:
     # 请修改为你自己的本地数据库地址
-    url: jdbc:mysql://localhost:3306/therepairsystem?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    # 注意：不要加 serverTimezone=UTC。本机 MySQL 与 JVM 通常都是 Asia/Shanghai，
+    # 显式声明 UTC 会让读出来的时间整体偏移 8 小时（Hibernate 的 LocalDateTime 走 getTimestamp 路径）。
+    url: jdbc:mysql://localhost:3306/therepairsystem?useSSL=false&allowPublicKeyRetrieval=true
     # 请修改为你自己的本地数据库用户名
     username: your_local_username
     # 请修改为你自己的本地数据库密码
