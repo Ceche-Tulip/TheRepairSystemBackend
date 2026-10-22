@@ -29,11 +29,16 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+### Editor ###
 .vscode/
+.idea/
+.workbuddy/
+.github/
 
 ### docs ###
 docs/
+Dockerfile
+.dockerignore
 
 ### Attachments ###
 minio_data/
