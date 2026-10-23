@@ -180,30 +180,95 @@ src/
 - 仅支持 `image/jpeg`、`image/png`、`image/webp`。
 - 默认单文件大小限制为 10MB。
 
-## 初始化管理员账号（SQL 示例）
+## 数据库初始化（seed.sql）
 
-请将 users.password 填写为 BCrypt 密文，而不是明文。
+项目**不带任何自动数据初始化**：仓库里没有 `data.sql` / `import.sql`，也没有 `CommandLineRunner`
+之类的启动钩子，Hibernate 的 `ddl-auto: update` 只负责建表、不插数据。
 
-```sql
-USE therepairsystem;
+所以全新部署后必须额外导入一份初始数据，否则：
 
--- 第一步：插入三个基础角色
-INSERT INTO user_role (id, role_name) VALUES
-(1, 'USER'),
-(2, 'ENGINEER'),
-(3, 'ADMIN');
+- `users` 表为空 → 无法登录；
+- 楼栋 / 楼层 / 故障类型为空 → 报修页的下拉框全空，工单提交不了；
+- 没有工程师及其技能 / 区域配置 → 自动分配无从匹配。
 
--- 第二步：插入默认管理员用户
--- password 必须是对明文 admin 的 BCrypt 密文（可用 UseBCrypt 生成）
-INSERT INTO users (id, username, password, phone, real_name) VALUES
-(1, 'admin', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xd00DMxs.jqstwCa', '13800000000', '系统管理员');
+仓库根目录的 `seed.sql` 一次性解决这些，内容如下：
 
--- 第三步：绑定 ADMIN 角色
-INSERT INTO user_role_rel (role_id, user_id) VALUES
-(3, 1);
+| 内容 | 条数 |
+| --- | --- |
+| 角色（USER / ENGINEER / ADMIN） | 3 |
+| 账号（1 管理员 + 2 工程师 + 2 普通用户） | 5 |
+| 楼栋 / 楼层 | 10 / 38 |
+| 故障类型 | 10 |
+| 工程师技能（可处理的故障类型） | 9 |
+| 工程师负责区域 | 19 |
+
+### 初始化步骤
+
+```bash
+# 1) 建库（必须指定 utf8mb4，否则中文会乱码）
+mysql -uroot -p -e "CREATE DATABASE therepairsystem DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
+
+# 2) 先启动一次后端，等 Hibernate 把 12 张表建好
+#    （日志出现 "Started TheRepairSystemApplication" 即可）
+
+# 3) 停掉后端，导入初始数据
+mysql -uroot -p --default-character-set=utf8mb4 therepairsystem < seed.sql
+```
+
+`seed.sql` 全部使用 `INSERT IGNORE` + 显式主键，**可以重复执行**，不会报错、也不会覆盖已有数据。
+脚本末尾带一条自检 SELECT，会打印各表实际行数，便于确认导入成功（全新环境 `repair_order` 应为 0）。
+
+### 预置账号
+
+三个角色对应的账号如下，密码统一为演示密码 —— 明文写在 `seed.sql` 的文件头注释里。
+`password` 字段存的是 BCrypt 密文，同一明文每次加密结果都不同，属正常现象。
+
+| 角色 | 账号 | 姓名 |
+| --- | --- | --- |
+| 系统管理员 | `admin` | 系统管理员 |
+| 工程师 | `engineer1` / `engineer2` | 张建国 / 李文博 |
+| 普通用户 | `student1` / `student2` | 王小明 / 刘芳 |
+
+> 说明：`seed.sql` 只预置账号与基础字典，**不预置报修单和评价**，全新环境工单数为 0，
+> 便于完整演示「提交报修 → 自动分配 → 接单 → 结单 → 评价」的整条流程。
+> 另外，工程师的区域覆盖是演示用的子集：楼层 15-18、24-38 以及「电梯故障」没有工程师负责，
+> 这类工单会自动分配失败并落到「管理员手动分配」路径，正好用来演示手动指派。
+> 若要覆盖全部区域，在 `engineer_area_rel` 里补对应关系即可。
+
+### 只想建一个管理员时
+
+最小可用集是「3 个角色 + 1 个管理员」，即 `seed.sql` 的第 1、2、3 节，可单独执行。
+若手工插入，`password` 必须是 BCrypt 密文（**不能写明文**），可用项目自带的工具生成：
+
+```bash
+.\mvnw -q -DskipTests test-compile exec:java -Dexec.mainClass=org.trs.UseBCrypt -Dexec.args="你的明文密码"
 ```
 
 ## 开发与运行
+
+### 快速开始（5 步）
+
+```text
+1. 装好 JDK 21 + MySQL 8.0，建库：therepairsystem（utf8mb4）
+2. 复制 src/main/resources/application-local.yml.example → application-local.yml，填数据库账号密码（可顺带填 AI Key）
+3. .\mvnw spring-boot:run 启动一次，等日志出现 "Started TheRepairSystemApplication"（此时 Hibernate 已建好表）
+4. 停掉服务，执行 seed.sql 导入预置账号与基础数据
+5. 重新启动，前端用 admin / engineer1 / student1 登录
+```
+
+> 第 3、4 步的顺序不能颠倒：建表由 Hibernate 负责，`seed.sql` 只插数据。
+
+### 环境要求
+
+| 组件 | 版本 | 说明 |
+| --- | --- | --- |
+| JDK | **21** | `pom.xml` 中 `java.version=21`、compiler source/target 均为 21，低于 21 无法编译 |
+| MySQL | 8.0+ | 字符集 utf8mb4、引擎 InnoDB；与后端同机部署时无需开启远程访问 |
+| Maven | — | 无需单独安装，用项目自带的 `mvnw.cmd`（Windows）/ `mvnw`（Linux、macOS） |
+| Docker | 可选 | 仅用于跑 MinIO；不用 MinIO 时附件存本地磁盘 |
+
+前端不在本仓库，需单独部署：开发环境 `npm run serve`（默认 9090 端口，代理 `/api` 到 8080），
+生产环境 `npm run build` 后用 Nginx 托管 `dist`。
 
 ### MinIO 部署与配置（Docker）
 
@@ -293,6 +358,34 @@ file:
 ```bash
 .\mvnw spring-boot:run
 ```
+
+### 打包
+
+`Dockerfile` 用的是 `COPY target/*.jar`，所以用 Docker 部署前**必须先打包**，否则 `docker build` 会失败：
+
+```bash
+.\mvnw clean package -DskipTests
+# 产物：target/TheRepairSystem-0.0.1-SNAPSHOT.jar
+```
+
+也可以不经过 Docker，直接用 Fat Jar 启动：
+
+```bash
+java -jar target/TheRepairSystem-0.0.1-SNAPSHOT.jar
+```
+
+### AI 服务配置
+
+AI 问答走 SiliconFlow，密钥放在 `application-local.yml`（已在 `.gitignore` 中忽略，不会入库）：
+
+```yaml
+siliconflow:
+  api-url: https://api.siliconflow.cn/v1/chat/completions
+  api-key: 你的 SiliconFlow API Key
+  model: deepseek-ai/DeepSeek-V3.2
+```
+
+不填写时其余功能不受影响，只有 `POST /api/ai/ask`（AI 小助手）会报错。
 
 ### 访问地址
 - API 文档: http://localhost:8080/swagger-ui/index.html#/
